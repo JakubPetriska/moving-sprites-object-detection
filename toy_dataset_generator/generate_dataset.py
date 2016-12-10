@@ -10,7 +10,7 @@ from utils import utils
 
 SHOW_VIDEO_ENCODING_INFO_LOG = False
 SHOW_TIME_LOG = True
-SHOW_OBJECT_RECTANGLES = True
+SHOW_OBJECT_RECTANGLES = False
 
 
 def apply_gaussian_noise(frame):
@@ -35,7 +35,7 @@ class Sprite:
 
     def render(self, frame):
         position = np.round(self.movement_function(self.initial_position, self.lifetime, self.velocity)) \
-            .astype(np.uint32)
+            .astype(np.int64)
         scale = self.scale_function(self.initial_scale, self.lifetime, self.scale_speed)
 
         scaled_sprite_image_size \
@@ -107,13 +107,13 @@ class SequenceGenerator:
         velocity *= random.gauss(mu=constants.MEAN_SPRITE_MOVEMENT_SPEED,
                                  sigma=constants.MEAN_SPRITE_MOVEMENT_SPEED / 2)
 
-        if constants.ALLOW_SHEARING:
+        if constants.ALLOW_SPRITE_SHEARING:
             initial_scale = np.array([random.uniform(constants.SPRITE_MIN_SCALE, 1) for i in range(0, 2)])
             scale_speed = np.array(
                 [random.gauss(mu=constants.MEAN_SPRITE_SCALE_SPEED, sigma=constants.MEAN_SPRITE_SCALE_SPEED / 2)
                  for i in range(0, 2)])
         else:
-            initial_scale = np.array([random.uniform(constants.SPRITE_MIN_SCALE, 1)] * 2)
+            initial_scale = np.array([random.uniform(constants.SPRITE_MIN_SCALE, 0.8)] * 2)
             scale_speed = np.array([random.gauss(mu=constants.MEAN_SPRITE_SCALE_SPEED,
                                                  sigma=constants.MEAN_SPRITE_SCALE_SPEED / 2)] * 2)
         if random.random() >= 0.5:
