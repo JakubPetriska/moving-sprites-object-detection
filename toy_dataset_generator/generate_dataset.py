@@ -6,6 +6,7 @@ import numpy as np
 from scipy import misc
 
 from toy_dataset_generator import constants
+from toy_dataset_generator import labels_utils
 from utils import utils
 
 SHOW_VIDEO_ENCODING_INFO_LOG = False
@@ -47,7 +48,7 @@ class Sprite:
         right = left + scaled_sprite_image_size[1]
         if bottom < 0 or top >= constants.RESOLUTION_HEIGHT \
                 or right < 0 or left >= constants.RESOLUTION_WIDTH:
-            return False
+            return None
         else:
             scaled_sprite = misc.imresize(self.sprite_image, scaled_sprite_image_size)
             # Take only the visible part of sprite
@@ -79,7 +80,7 @@ class Sprite:
                 frame[top:top + 1, left:right, 1:] = 0
                 frame[bottom:bottom + 1, left:right, 0] = 255
                 frame[bottom:bottom + 1, left:right, 1:] = 0
-            return True
+            return top - overlap_top, bottom - overlap_bottom, left - overlap_left, right - overlap_right
 
 
 class SequenceGenerator:
@@ -137,12 +138,16 @@ class SequenceGenerator:
         frame *= 210
         apply_gaussian_noise(frame)
 
+        frame_labels = []
         for i in range(len(self.sprites) - 1, -1, -1):
-            if not self.sprites[i].render(frame):
+            sprite_boundaries = self.sprites[i].render(frame)
+            if not sprite_boundaries:
                 self.sprites.pop(i)
+            else:
+                frame_labels.append(sprite_boundaries)
 
         frame = np.clip(frame, 0, 255).astype(np.uint8)
-        return frame
+        return frame, frame_labels
 
 
 def generate_sequence(frame_count, folder_path):
@@ -166,8 +171,10 @@ def generate_sequence(frame_count, folder_path):
     sequence_generator = SequenceGenerator(sprite_images)
     frame_generation_start = utils.start_timer()
     frame_image_path_format = os.path.join(images_dir, constants.FRAME_IMAGE_FILE_NAME_FORMAT)
+    sequence_labels = []
     for i in range(0, frame_count):
-        frame = sequence_generator.generate_next_frame()
+        frame, frame_labels = sequence_generator.generate_next_frame()
+        sequence_labels.append([i] + frame_labels)
         misc.imsave(frame_image_path_format % i, frame)
 
     frames_generation_duration = utils.get_duration_secs(frame_generation_start)
@@ -187,6 +194,8 @@ def generate_sequence(frame_count, folder_path):
     if SHOW_TIME_LOG:
         print('\t\tGenerated video in %.1f seconds' % utils.get_duration_secs(video_encoding_start))
 
+    labels_utils.write_labels(os.path.join(folder_path, constants.DATASET_LABELS_FILE), sequence_labels)
+    print('\tLabels saved')
 
 print('Generating training data')
 generate_sequence(constants.FRAME_COUNT_TRAINING,
