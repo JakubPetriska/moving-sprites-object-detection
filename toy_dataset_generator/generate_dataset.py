@@ -124,8 +124,9 @@ class SequenceGenerator:
                       scale_speed, random.choice(self.scale_functions))
 
     def _spawn_probability(self):
-        slope = (0.3 - 1) / constants.AVERAGE_SPRITE_COUNT
-        return slope * len(self.sprites) + 1
+        zero_sprite_spawn_probability = 0.5
+        slope = (0.2 - zero_sprite_spawn_probability) / constants.AVERAGE_SPRITE_COUNT
+        return slope * len(self.sprites) + zero_sprite_spawn_probability
 
     def generate_next_frame(self):
         for sprite in self.sprites:
