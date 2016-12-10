@@ -6,7 +6,9 @@ SPRITES_DIR = 'sprites'
 
 # Output data paths and structure
 DATASET_IMAGES_DIR = 'images'
+DATASET_IMAGES_ANNOTATED_DIR = 'images_annotated'
 DATASET_VIDEO_FILE = 'video.mp4'
+DATASET_VIDEO_ANNOTATED_FILE = 'video_annotated.mp4'
 DATASET_LABELS_FILE = 'labels.txt'
 FRAME_IMAGE_FILE_NAME_FORMAT = 'image%05d.png'
 

@@ -53,9 +53,9 @@ class Sprite:
             scaled_sprite = misc.imresize(self.sprite_image, scaled_sprite_image_size)
             # Take only the visible part of sprite
             overlap_top = max(top * -1, 0)
-            overlap_bottom = max(bottom - constants.RESOLUTION_HEIGHT, 0)
+            overlap_bottom = max(bottom - constants.RESOLUTION_HEIGHT + 1, 0)
             overlap_left = max(left * -1, 0)
-            overlap_right = max(right - constants.RESOLUTION_WIDTH, 0)
+            overlap_right = max(right - constants.RESOLUTION_WIDTH + 1, 0)
             scaled_sprite \
                 = scaled_sprite[overlap_top:scaled_sprite_image_size[0] - overlap_bottom,
                   overlap_left:scaled_sprite_image_size[1] - overlap_right, :]
@@ -80,7 +80,8 @@ class Sprite:
                 frame[top:top + 1, left:right, 1:] = 0
                 frame[bottom:bottom + 1, left:right, 0] = 255
                 frame[bottom:bottom + 1, left:right, 1:] = 0
-            return top - overlap_top, bottom - overlap_bottom, left - overlap_left, right - overlap_right
+            return 0 if overlap_top > 0 else top, bottom - overlap_bottom, \
+                   0 if overlap_left > 0 else left, right - overlap_right
 
 
 class SequenceGenerator:
@@ -186,17 +187,24 @@ def generate_sequence(frame_count, folder_path):
 
     # Generate video file
     video_encoding_start = utils.start_timer()
-    os.system('ffmpeg -f image2 -r %d -i %s -loglevel %s -vcodec mpeg4 -y %s'
-              % (constants.FRAMES_PER_SECOND, frame_image_path_format,
-                 '32' if SHOW_VIDEO_ENCODING_INFO_LOG else '24',
-                 os.path.join(folder_path, constants.DATASET_VIDEO_FILE)))
-
+    labels_utils.create_video(images_dir, os.path.join(folder_path, constants.DATASET_VIDEO_FILE),
+                              SHOW_VIDEO_ENCODING_INFO_LOG)
     print('\tVideo file generated')
     if SHOW_TIME_LOG:
         print('\t\tGenerated video in %.1f seconds' % utils.get_duration_secs(video_encoding_start))
 
     labels_utils.write_labels(os.path.join(folder_path, constants.DATASET_LABELS_FILE), sequence_labels)
     print('\tLabels saved')
+
+    annotation_start = utils.start_timer()
+    labels_utils.annotate_dataset(images_dir, os.path.join(folder_path, constants.DATASET_LABELS_FILE),
+                                  os.path.join(folder_path, constants.DATASET_IMAGES_ANNOTATED_DIR),
+                                  os.path.join(folder_path, constants.DATASET_VIDEO_ANNOTATED_FILE),
+                                  SHOW_VIDEO_ENCODING_INFO_LOG)
+    print('\tAnnotated data created')
+    if SHOW_TIME_LOG:
+        print('\t\tAnnotated dataset in %.1f seconds' % utils.get_duration_secs(annotation_start))
+
 
 print('Generating training data')
 generate_sequence(constants.FRAME_COUNT_TRAINING,
