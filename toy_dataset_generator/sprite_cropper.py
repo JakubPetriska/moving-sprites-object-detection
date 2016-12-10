@@ -19,7 +19,7 @@ for file_name in file_names:
     for i in range(0, sprite.shape[0]):
         should_break = False
         for j in range(0, sprite.shape[1]):
-            if not np.array_equal(sprite[i, j], transparent_pixel):
+            if not sprite[i, j, 3] == 0:
                 sprite = sprite[i:, :]
                 should_break = True
                 break
@@ -30,7 +30,7 @@ for file_name in file_names:
     for i in range(sprite.shape[0] - 1, -1, -1):
         should_break = False
         for j in range(0, sprite.shape[1]):
-            if not np.array_equal(sprite[i, j], transparent_pixel):
+            if not sprite[i, j, 3] == 0:
                 sprite = sprite[0:i, :]
                 should_break = True
                 break
@@ -41,7 +41,7 @@ for file_name in file_names:
     for j in range(0, sprite.shape[1]):
         should_break = False
         for i in range(0, sprite.shape[0]):
-            if not np.array_equal(sprite[i, j], transparent_pixel):
+            if not sprite[i, j, 3] == 0:
                 sprite = sprite[:, j:]
                 should_break = True
                 break
@@ -52,7 +52,7 @@ for file_name in file_names:
     for j in range(sprite.shape[1] - 1, -1, -1):
         should_break = False
         for i in range(0, sprite.shape[0]):
-            if not np.array_equal(sprite[i, j], transparent_pixel):
+            if not sprite[i, j, 3] == 0:
                 sprite = sprite[:, 0:j]
                 should_break = True
                 break
