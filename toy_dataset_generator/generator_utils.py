@@ -8,7 +8,7 @@ from toy_dataset_generator import constants
 LABELS_FILE_DELIMITER = ';'
 
 
-def create_video(images_dir, output_file_path, show_encoding_info):
+def create_video(images_dir, output_file_path, show_encoding_info=False):
     os.system('ffmpeg -f image2 -r %d -i %s -loglevel %s -vcodec mpeg4 -y %s'
               % (constants.FRAMES_PER_SECOND, os.path.join(images_dir, constants.FRAME_IMAGE_FILE_NAME_FORMAT),
                  '32' if show_encoding_info else '24',
