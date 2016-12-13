@@ -1,11 +1,13 @@
 import datetime
 import os
 import sys
+import random
 
 import matplotlib.pyplot as plt
 import numpy as np
 from keras.layers import Convolution2D, MaxPooling2D
 from keras.models import Sequential
+from keras.optimizers import Adagrad
 from scipy import misc
 
 from common import utils
@@ -32,7 +34,7 @@ PROGRESS_VERBOSITY = 1
 
 VALIDATE_AFTER_EACH_EPOCH = True
 
-TEST_SEQUENCE_OVERLAY_ALPHA = 0.2
+TEST_SEQUENCE_OVERLAY_ALPHA = 0.1
 TEST_SEQUENCE_OVERLAY_COLOR = [0, 255, 0]
 
 BATCH_SIZE = 50
@@ -75,8 +77,9 @@ def save_masks(path, masks):
         os.makedirs(path)
     mask_image_path = os.path.join(path, constants.FRAME_IMAGE_FILE_NAME_FORMAT)
     for i in range(len(masks)):
-        mask = masks[i]
-        mask_image = mask * 255
+        mask_image = masks[i]
+        mask_image *= 255
+        mask_image = np.clip(mask_image, 0, 255)
         mask_image = np.round(mask_image).astype(np.uint8)
         mask_image = np.repeat(mask_image, 3, axis=2)
         misc.imsave(mask_image_path % i, mask_image)
@@ -90,7 +93,7 @@ def generate_video_sequence(path, images, masks):
     mask_shape = masks[0].shape
     for i in range(len(images)):
         image = images[i]
-        mask = masks[i]
+        mask = np.clip(masks[i], 0, 1)
         overlay_mask = np.empty(shape=(1, 1, 3))
         overlay_mask[0, 0] = TEST_SEQUENCE_OVERLAY_COLOR
         overlay_mask = np.repeat(overlay_mask, mask_shape[0], axis=0)
@@ -127,9 +130,11 @@ model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
 model.add(Convolution2D(64, 5, 5, activation='relu'))
 model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
 model.add(Convolution2D(128, 3, 3, activation='relu'))
+model.add(Convolution2D(32, 1, 1, activation='relu'))
+model.add(Convolution2D(16, 1, 1, activation='relu'))
 model.add(Convolution2D(1, 1, 1, activation='relu'))
 
-model.compile(loss='binary_crossentropy', optimizer='sgd', metrics=['accuracy'])
+model.compile(loss='binary_crossentropy', optimizer=Adagrad(lr=0.001), metrics=['accuracy'])
 
 output_shape = model.layers[-1].output_shape[1:]
 
@@ -143,7 +148,7 @@ if not DEBUG:
 else:
     x_train, y_train = read_toy_dataset(os.path.join(constants.OUTPUT_PATH, constants.VALIDATION_DATASET_PATH),
                                         output_shape)
-    x_train = x_train[:2* BATCH_SIZE]
+    x_train = x_train[:2 * BATCH_SIZE]
     y_train = y_train[:2 * BATCH_SIZE]
 
 print('Training data read in %.2f minutes' % utils.get_duration_minutes(start))
@@ -153,9 +158,13 @@ validation_results = []
 if VALIDATE_AFTER_EACH_EPOCH:
     print('Reading validation data')
     start = utils.start_timer()
-    x_validation, y_validation = read_toy_dataset(
-        os.path.join(constants.OUTPUT_PATH, constants.VALIDATION_DATASET_PATH),
-        output_shape)
+    if not DEBUG:
+        x_validation, y_validation = read_toy_dataset(
+            os.path.join(constants.OUTPUT_PATH, constants.VALIDATION_DATASET_PATH),
+            output_shape)
+    else:
+        x_validation = x_train
+        y_validation = y_train
     print('Validation data read in %.2f minutes' % utils.get_duration_minutes(start))
     for i in range(0, TRAINING_EPOCHS):
         print('Training epoch %s' % (i + 1))
