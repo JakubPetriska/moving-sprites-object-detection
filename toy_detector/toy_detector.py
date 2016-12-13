@@ -36,7 +36,9 @@ TEST_SEQUENCE_OVERLAY_ALPHA = 0.2
 TEST_SEQUENCE_OVERLAY_COLOR = [0, 255, 0]
 
 BATCH_SIZE = 50
-TRAINING_EPOCHS = 12
+TRAINING_EPOCHS = 3
+
+DEBUG = False
 
 
 def read_toy_dataset(path, model_output_shape):
@@ -134,8 +136,16 @@ output_shape = model.layers[-1].output_shape[1:]
 # Read data
 print('Reading training data')
 start = utils.start_timer()
-x_train, y_train = read_toy_dataset(os.path.join(constants.OUTPUT_PATH, constants.TRAINING_DATASET_PATH),
-                                    output_shape)
+
+if not DEBUG:
+    x_train, y_train = read_toy_dataset(os.path.join(constants.OUTPUT_PATH, constants.TRAINING_DATASET_PATH),
+                                        output_shape)
+else:
+    x_train, y_train = read_toy_dataset(os.path.join(constants.OUTPUT_PATH, constants.VALIDATION_DATASET_PATH),
+                                        output_shape)
+    x_train = x_train[:2* BATCH_SIZE]
+    y_train = y_train[:2 * BATCH_SIZE]
+
 print('Training data read in %.2f minutes' % utils.get_duration_minutes(start))
 
 # Train the network
@@ -192,12 +202,12 @@ if SAVE_PREDICTED_TEST_MASKS or GENERATE_ANNOTATED_VIDEO:
 if len(validation_results) > 0:
     graph_x = range(1, len(validation_results) + 1)
     validation_results = np.transpose(np.array(validation_results))
-    print('Validation error data:')
+    print('Validation performance data: %s' % str(model.metrics_names))
     print(validation_results)
-    line = plt.plot(graph_x, validation_results[0], graph_x, validation_results[1])
-    plt.title('Validation error')
+    line = plt.plot(graph_x, validation_results[1])
+    plt.title('Prediction accuracy')
     plt.xlabel('Epoch')
-    plt.ylabel('Error')
+    plt.ylabel('Prediction accuracy')
     plt.xticks(graph_x)
     plt.grid()
     plt.draw()
