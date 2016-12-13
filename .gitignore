@@ -92,4 +92,4 @@ ENV/
 
 .idea
 toy_dataset
-toy_detector/result
+toy_detector/results
