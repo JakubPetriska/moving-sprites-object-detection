@@ -6,7 +6,7 @@ from scipy import misc
 from toy_dataset_generator import constants
 from toy_dataset_generator import generator_utils
 
-TEST_SEQUENCE_OVERLAY_ALPHA = 0.1
+TEST_SEQUENCE_OVERLAY_ALPHA = 0.25
 TEST_SEQUENCE_OVERLAY_COLOR = [0, 255, 0]
 
 
@@ -44,7 +44,7 @@ def save_masks(path, masks):
         os.makedirs(path)
     mask_image_path = os.path.join(path, constants.FRAME_IMAGE_FILE_NAME_FORMAT)
     for i in range(len(masks)):
-        mask_image = masks[i]
+        mask_image = np.copy(masks[i])
         mask_image *= 255
         mask_image = np.clip(mask_image, 0, 255)
         mask_image = np.round(mask_image).astype(np.uint8)
@@ -56,25 +56,21 @@ def generate_video_sequence(output_path, images_dir, images, masks):
     if not os.path.exists(images_dir):
         os.makedirs(images_dir)
     frame_image_path = os.path.join(images_dir, constants.FRAME_IMAGE_FILE_NAME_FORMAT)
-    mask_shape = masks[0].shape
     for i in range(len(images)):
-        image = images[i]
-        mask = np.clip(masks[i], 0, 1)
+        image = np.copy(images[i]).astype(np.float)
+        mask = np.clip(np.copy(masks[i]), 0, 1)
+        mask *= 255
+        mask = np.repeat(mask.astype(np.uint8), 3, axis=2)
+        mask = misc.imresize(mask, (constants.RESOLUTION_HEIGHT, constants.RESOLUTION_WIDTH, 3))
+        mask = mask.astype(np.float)
+        mask /= 255
         overlay_mask = np.empty(shape=(1, 1, 3))
         overlay_mask[0, 0] = TEST_SEQUENCE_OVERLAY_COLOR
-        overlay_mask = np.repeat(overlay_mask, mask_shape[0], axis=0)
-        overlay_mask = np.repeat(overlay_mask, mask_shape[1], axis=1)
-        overlay_mask *= mask
+        overlay_mask = np.repeat(overlay_mask, constants.RESOLUTION_HEIGHT, axis=0)
+        overlay_mask = np.repeat(overlay_mask, constants.RESOLUTION_WIDTH, axis=1)
         overlay_mask *= TEST_SEQUENCE_OVERLAY_ALPHA
-        scaled_overlay_mask = misc.imresize(overlay_mask.astype(np.uint8),
-                                            (constants.RESOLUTION_HEIGHT, constants.RESOLUTION_WIDTH, 3))
-        background_alpha = -mask
-        background_alpha += 1
-        background_alpha *= 255
-        background_alpha = np.repeat(background_alpha, 3, axis=2).astype(np.uint8)
-        background_alpha = misc.imresize(background_alpha, (constants.RESOLUTION_HEIGHT, constants.RESOLUTION_WIDTH, 3))
-        background_alpha = background_alpha.astype(np.float) / 255
-        image *= background_alpha
-        image += scaled_overlay_mask
+        overlay_mask *= mask
+        image *= 1 - (mask * (1 - TEST_SEQUENCE_OVERLAY_ALPHA))
+        image += overlay_mask
         misc.imsave(frame_image_path % i, image.astype(np.uint8))
     generator_utils.create_video(images_dir, output_path)
