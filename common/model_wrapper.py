@@ -31,7 +31,7 @@ class ModelWrapper(ABC):
 
 class ExtendedModelWrapper(ModelWrapper):
     @abstractmethod
-    def train(self, x, y, validation_data=None):
+    def train(self, x, y, validation_data=None, callbacks=None):
         pass
 
     @abstractmethod

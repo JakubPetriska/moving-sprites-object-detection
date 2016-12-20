@@ -27,11 +27,9 @@ class ToyModel(ExtendedModelWrapper):
     def compile_model(self):
         self.model.compile(loss='binary_crossentropy', optimizer=Adagrad(lr=0.001), metrics=['accuracy'])
 
-    def train(self, x, y, validation_data=None):
-        history = History()
+    def train(self, x, y, validation_data=None, callbacks=None):
         self.model.fit(x, y, nb_epoch=TRAINING_EPOCHS, batch_size=BATCH_SIZE, verbose=self.verbosity,
-                       validation_data=validation_data, callbacks=[history])
-        return history
+                       validation_data=validation_data, callbacks=callbacks)
 
     def evaluate(self, x, y):
         return self.model.evaluate(x, y, batch_size=BATCH_SIZE, verbose=self.verbosity)

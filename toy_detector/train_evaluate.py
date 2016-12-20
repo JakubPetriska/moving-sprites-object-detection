@@ -3,6 +3,8 @@ import os
 import sys
 
 import matplotlib.pyplot as plt
+from keras.callbacks import TensorBoard
+from keras.utils.visualize_util import plot
 
 from common.loggers import LoggerErr
 from common.loggers import LoggerOut
@@ -15,6 +17,8 @@ from toy_detector.utils import read_toy_dataset
 from toy_detector.utils import save_masks
 
 RESULT_DIR_FORMAT = os.path.join('results', 'result_%s')
+TENSORBOARD_LOGS_DIR = 'tensorboard_logs'
+MODEL_PLOT = 'model.png'
 IMAGES_DIR = 'images_annotated'
 MASKS_DIR = 'masks_ground_truth'
 PREDICTED_MASKS_DIR = 'masks_predicted'
@@ -64,7 +68,9 @@ else:
 print('Data read in %.2f minutes' % get_duration_minutes(start))
 
 # Train the network
-training_history = model_wrapper.train(x_train, y_train, validation_data=(x_validation, y_validation))
+# training_history = model_wrapper.train(x_train, y_train, validation_data=(x_validation, y_validation))
+tensorboard_callback = TensorBoard(log_dir=os.path.join(result_dir, TENSORBOARD_LOGS_DIR))
+model_wrapper.train(x_train, y_train, validation_data=(x_validation, y_validation), callbacks=[tensorboard_callback])
 
 # Save model
 print('Saving model to disk')
@@ -72,8 +78,11 @@ model_wrapper.save_to_disk(os.path.join(result_dir, MODEL_FILE), os.path.join(re
 
 # Evaluate performance
 print("Training finished")
-x_test, y_test = read_toy_dataset(os.path.join(constants.OUTPUT_PATH, constants.TEST_DATASET_PATH),
-                                  output_shape)
+x_test, y_test = read_toy_dataset(os.path.join(constants.OUTPUT_PATH, constants.TEST_DATASET_PATH), output_shape)
+if DEBUG:
+    x_test = x_test[:2 * BATCH_SIZE]
+    y_test = y_test[:2 * BATCH_SIZE]
+
 test_error = model_wrapper.evaluate(x_test, y_test)
 print('\tTest result - loss: %s, accuracy: %s' % tuple(test_error))
 
@@ -90,17 +99,5 @@ if SAVE_PREDICTED_TEST_MASKS or GENERATE_ANNOTATED_VIDEO:
         generate_video_sequence(os.path.join(result_dir, VIDEO_FILE), os.path.join(result_dir, IMAGES_DIR),
                                 x_test, y_predicted)
 
-print('Validation performance data: %s' % str(model_wrapper.model.metrics_names))
-print(training_history.history)
-
-# Plot validation error development
-accuracy_history = training_history.history[model_wrapper.model.metrics_names[-1]]
-graph_x = range(1, len(accuracy_history) + 1)
-line = plt.plot(graph_x, accuracy_history)
-plt.title('Prediction accuracy')
-plt.xlabel('Epoch')
-plt.ylabel('Prediction accuracy')
-plt.xticks(graph_x)
-plt.grid()
-plt.draw()
-plt.savefig(os.path.join(result_dir, VALIDATION_ERROR_GRAPH_FILE))
+# Plot the model
+plot(model_wrapper.model, to_file=os.path.join(result_dir, MODEL_PLOT), show_shapes=True)
