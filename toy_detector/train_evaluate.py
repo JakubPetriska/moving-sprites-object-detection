@@ -16,7 +16,7 @@ from toy_detector.utils import generate_video_sequence
 from toy_detector.utils import read_toy_dataset
 from toy_detector.utils import save_masks
 
-RESULT_DIR_FORMAT = os.path.join('results', 'result_%s')
+RESULT_DIR_FORMAT = os.path.join(os.pardir, os.pardir, 'results', 'result_%s')
 TENSORBOARD_LOGS_DIR = 'tensorboard_logs'
 MODEL_PLOT = 'model.png'
 IMAGES_DIR = 'images_annotated'
@@ -31,6 +31,7 @@ MODEL_WEIGHTS_FILE = 'model_weights.h5'
 SAVE_GROUND_TRUTH_TEST_MASKS = True
 GENERATE_ANNOTATED_VIDEO = True
 SAVE_PREDICTED_TEST_MASKS = True
+SAVE_LOG_FILE = False
 
 PROGRESS_VERBOSITY = 1
 DEBUG = False
@@ -39,9 +40,10 @@ result_dir = RESULT_DIR_FORMAT % datetime.datetime.now().strftime("%Y.%m.%d-%H:%
 if not os.path.exists(result_dir):
     os.makedirs(result_dir)
 
-output_file_path = os.path.join(result_dir, CONSOLE_OUTPUT_FILE)
-sys.stdout = LoggerOut(output_file_path)
-sys.stderr = LoggerErr(output_file_path)
+if SAVE_LOG_FILE:
+    output_file_path = os.path.join(result_dir, CONSOLE_OUTPUT_FILE)
+    sys.stdout = LoggerOut(output_file_path)
+    sys.stderr = LoggerErr(output_file_path)
 
 # Create the model
 model_wrapper = ToyModel(verbosity=PROGRESS_VERBOSITY)

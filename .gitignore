@@ -91,5 +91,3 @@ ENV/
 .ropeproject
 
 .idea
-toy_dataset
-toy_detector/results

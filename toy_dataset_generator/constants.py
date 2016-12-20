@@ -1,7 +1,7 @@
 import os.path
 
 # Paths
-OUTPUT_PATH = os.path.join('..', 'toy_dataset')
+OUTPUT_PATH = os.path.join(os.pardir, os.pardir, 'toy_dataset')
 SPRITES_DIR = 'sprites'
 
 # Output data paths and structure

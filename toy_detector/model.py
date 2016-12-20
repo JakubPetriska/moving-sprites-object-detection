@@ -1,4 +1,3 @@
-from keras.callbacks import History
 from keras.layers import Convolution2D, MaxPooling2D
 from keras.models import Sequential
 from keras.optimizers import Adagrad
