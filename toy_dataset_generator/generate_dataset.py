@@ -3,6 +3,7 @@ import random
 from os import listdir
 
 import numpy as np
+import shutil
 from scipy import misc
 
 from toy_dataset_generator import constants
@@ -205,6 +206,10 @@ def generate_sequence(frame_count, folder_path):
     if SHOW_TIME_LOG:
         print('\t\tAnnotated dataset in %.1f seconds' % utils.get_duration_secs(annotation_start))
 
+
+if os.path.exists(constants.OUTPUT_PATH):
+    print('Old dataset removed!!!')
+    shutil.rmtree(constants.OUTPUT_PATH, ignore_errors=True)
 
 print('Generating training data')
 generate_sequence(constants.FRAME_COUNT_TRAINING,

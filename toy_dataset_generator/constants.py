@@ -2,7 +2,7 @@ import os.path
 
 # Paths
 OUTPUT_PATH = os.path.join(os.pardir, os.pardir, 'toy_dataset')
-SPRITES_DIR = 'sprites'
+SPRITES_DIR = os.path.join(os.pardir, os.pardir, 'sprites')
 
 # Output data paths and structure
 DATASET_IMAGES_DIR = 'images'
