@@ -1,12 +1,10 @@
 import datetime
 import os
-import sys
 
 from keras.callbacks import TensorBoard
 from keras.utils.visualize_util import plot
+from tabulate import tabulate
 
-from common.loggers import LoggerErr
-from common.loggers import LoggerOut
 from common.utils import get_duration_minutes
 from common.utils import start_timer
 from toy_dataset_generator import constants
@@ -23,9 +21,9 @@ MASKS_DIR = 'masks_ground_truth'
 PREDICTED_MASKS_DIR = 'masks_predicted'
 VIDEO_FILE = 'video.mp4'
 VALIDATION_ERROR_GRAPH_FILE = 'validation_accuracy.png'
-CONSOLE_OUTPUT_FILE = 'output.txt'
 MODEL_FILE = 'model.json'
 MODEL_WEIGHTS_FILE = 'model_weights.h5'
+OUTPUT_INFO_FILE = 'output'
 
 SAVE_GROUND_TRUTH_TEST_MASKS = True
 GENERATE_ANNOTATED_VIDEO = True
@@ -38,11 +36,6 @@ DEBUG = False
 result_dir = RESULT_DIR_FORMAT % datetime.datetime.now().strftime("%Y.%m.%d-%H:%M:%S")
 if not os.path.exists(result_dir):
     os.makedirs(result_dir)
-
-if SAVE_LOG_FILE:
-    output_file_path = os.path.join(result_dir, CONSOLE_OUTPUT_FILE)
-    sys.stdout = LoggerOut(output_file_path)
-    sys.stderr = LoggerErr(output_file_path)
 
 # Create the model
 model_wrapper = ToyModel(verbosity=PROGRESS_VERBOSITY)
@@ -58,6 +51,7 @@ if not DEBUG:
     x_validation, y_validation = read_toy_dataset(
         os.path.join(constants.OUTPUT_PATH, constants.VALIDATION_DATASET_PATH),
         output_shape)
+    x_test, y_test = read_toy_dataset(os.path.join(constants.OUTPUT_PATH, constants.TEST_DATASET_PATH), output_shape)
 else:
     x_train, y_train = read_toy_dataset(os.path.join(constants.OUTPUT_PATH, constants.VALIDATION_DATASET_PATH),
                                         output_shape)
@@ -65,8 +59,15 @@ else:
     y_train = y_train[:2 * BATCH_SIZE]
     x_validation = x_train
     y_validation = y_train
+    x_test = x_train
+    y_test = y_train
 
 print('Data read in %.2f minutes' % get_duration_minutes(start))
+
+# Do initial evaluation of validation and test data
+initial_training_eval = model_wrapper.evaluate(x_train, y_train)
+initial_validation_eval = model_wrapper.evaluate(x_validation, y_validation)
+initial_test_eval = model_wrapper.evaluate(x_test, y_test)
 
 # Train the network
 tensorboard_callback = TensorBoard(log_dir=os.path.join(result_dir, TENSORBOARD_LOGS_DIR))
@@ -78,13 +79,9 @@ model_wrapper.save_to_disk(os.path.join(result_dir, MODEL_FILE), os.path.join(re
 
 # Evaluate performance
 print("Training finished")
-x_test, y_test = read_toy_dataset(os.path.join(constants.OUTPUT_PATH, constants.TEST_DATASET_PATH), output_shape)
-if DEBUG:
-    x_test = x_test[:2 * BATCH_SIZE]
-    y_test = y_test[:2 * BATCH_SIZE]
-
-test_error = model_wrapper.evaluate(x_test, y_test)
-print('\tTest result - loss: %s, accuracy: %s' % tuple(test_error))
+final_training_eval = model_wrapper.evaluate(x_train, y_train)
+final_validation_eval = model_wrapper.evaluate(x_validation, y_validation)
+final_test_eval = model_wrapper.evaluate(x_test, y_test)
 
 # Generate annotated test video sequence
 print('Creating annotated test data')
@@ -101,3 +98,14 @@ if SAVE_PREDICTED_TEST_MASKS or GENERATE_ANNOTATED_VIDEO:
 
 # Plot the model
 plot(model_wrapper.model, to_file=os.path.join(result_dir, MODEL_PLOT), show_shapes=True)
+
+evaluation_table = tabulate([['Training', initial_training_eval[0], initial_training_eval[1],
+                              final_training_eval[0], final_training_eval[1]],
+                             ['Validation', initial_validation_eval[0], initial_validation_eval[1],
+                              final_validation_eval[0], final_validation_eval[1]],
+                             ['Test', initial_test_eval[0], initial_test_eval[1],
+                              final_test_eval[0], final_test_eval[1]]],
+                            headers=['Data', 'Initial loss', 'Initial accuracy', 'Final loss', 'Final accuracy'])
+with open(os.path.join(result_dir, OUTPUT_INFO_FILE), mode='w') as output_file:
+    output_file.write(evaluation_table)
+print('\n' + evaluation_table)
