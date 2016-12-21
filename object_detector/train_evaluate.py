@@ -8,10 +8,10 @@ from tabulate import tabulate
 from common.utils import get_duration_minutes
 from common.utils import start_timer
 from toy_dataset_generator import constants
-from toy_detector.model import BATCH_SIZE, ToyModel
-from toy_detector.utils import generate_video_sequence
-from toy_detector.utils import read_toy_dataset
-from toy_detector.utils import save_masks
+from object_detector.model import BATCH_SIZE, ToyModel
+from object_detector.utils import generate_video_sequence
+from object_detector.utils import read_toy_dataset
+from object_detector.utils import save_masks
 
 RESULT_DIR_FORMAT = os.path.join(os.pardir, os.pardir, 'results', 'result_%s')
 TENSORBOARD_LOGS_DIR = 'tensorboard_logs'
