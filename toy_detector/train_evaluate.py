@@ -2,7 +2,6 @@ import datetime
 import os
 import sys
 
-import matplotlib.pyplot as plt
 from keras.callbacks import TensorBoard
 from keras.utils.visualize_util import plot
 
