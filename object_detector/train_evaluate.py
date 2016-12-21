@@ -7,6 +7,7 @@ from tabulate import tabulate
 
 from common.utils import get_duration_minutes
 from common.utils import start_timer
+from object_detector import utils
 from toy_dataset_generator import constants
 from object_detector.model import BATCH_SIZE, ToyModel
 from object_detector.utils import generate_video_sequence
@@ -16,13 +17,8 @@ from object_detector.utils import save_masks
 RESULT_DIR_FORMAT = os.path.join(os.pardir, os.pardir, 'results', 'result_%s')
 TENSORBOARD_LOGS_DIR = 'tensorboard_logs'
 MODEL_PLOT = 'model.png'
-IMAGES_DIR = 'images_annotated'
 MASKS_DIR = 'masks_ground_truth'
-PREDICTED_MASKS_DIR = 'masks_predicted'
-VIDEO_FILE = 'video.mp4'
 VALIDATION_ERROR_GRAPH_FILE = 'validation_accuracy.png'
-MODEL_FILE = 'model.json'
-MODEL_WEIGHTS_FILE = 'model_weights.h5'
 OUTPUT_INFO_FILE = 'output'
 
 SAVE_GROUND_TRUTH_TEST_MASKS = True
@@ -31,7 +27,7 @@ SAVE_PREDICTED_TEST_MASKS = True
 SAVE_LOG_FILE = False
 
 PROGRESS_VERBOSITY = 1
-DEBUG = False
+DEBUG = True
 
 result_dir = RESULT_DIR_FORMAT % datetime.datetime.now().strftime("%Y.%m.%d-%H:%M:%S")
 if not os.path.exists(result_dir):
@@ -75,7 +71,8 @@ model_wrapper.train(x_train, y_train, validation_data=(x_validation, y_validatio
 
 # Save model
 print('Saving model to disk')
-model_wrapper.save_to_disk(os.path.join(result_dir, MODEL_FILE), os.path.join(result_dir, MODEL_WEIGHTS_FILE))
+model_wrapper.save_to_disk(os.path.join(result_dir, utils.MODEL_FILE),
+                           os.path.join(result_dir, utils.MODEL_WEIGHTS_FILE))
 
 # Evaluate performance
 print("Training finished")
@@ -91,9 +88,10 @@ if SAVE_GROUND_TRUTH_TEST_MASKS:
 if SAVE_PREDICTED_TEST_MASKS or GENERATE_ANNOTATED_VIDEO:
     y_predicted = model_wrapper.predict(x_test)
     if SAVE_PREDICTED_TEST_MASKS:
-        save_masks(os.path.join(result_dir, PREDICTED_MASKS_DIR), y_predicted)
+        save_masks(os.path.join(result_dir, utils.PREDICTED_MASKS_DIR), y_predicted)
     if GENERATE_ANNOTATED_VIDEO:
-        generate_video_sequence(os.path.join(result_dir, VIDEO_FILE), os.path.join(result_dir, IMAGES_DIR),
+        generate_video_sequence(os.path.join(result_dir, utils.VIDEO_FILE),
+                                os.path.join(result_dir, utils.IMAGES_DIR),
                                 x_test, y_predicted)
 
 # Plot the model

@@ -6,6 +6,13 @@ from scipy import misc
 from toy_dataset_generator import constants
 from toy_dataset_generator import generator_utils
 
+# Evaluation result folder structure
+MODEL_FILE = 'model.json'
+MODEL_WEIGHTS_FILE = 'model_weights.h5'
+PREDICTED_MASKS_DIR = 'masks_predicted'
+VIDEO_FILE = 'video.mp4'
+IMAGES_DIR = 'images_annotated'
+
 TEST_SEQUENCE_OVERLAY_ALPHA = 0.25
 TEST_SEQUENCE_OVERLAY_COLOR = [0, 255, 0]
 
