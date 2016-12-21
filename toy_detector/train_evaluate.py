@@ -69,7 +69,6 @@ else:
 print('Data read in %.2f minutes' % get_duration_minutes(start))
 
 # Train the network
-# training_history = model_wrapper.train(x_train, y_train, validation_data=(x_validation, y_validation))
 tensorboard_callback = TensorBoard(log_dir=os.path.join(result_dir, TENSORBOARD_LOGS_DIR))
 model_wrapper.train(x_train, y_train, validation_data=(x_validation, y_validation), callbacks=[tensorboard_callback])
 
