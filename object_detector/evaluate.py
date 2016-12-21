@@ -2,10 +2,10 @@ import os
 import sys
 
 from object_detector import utils
+from object_detector.model import ToyModel
 from object_detector.utils import generate_video_sequence
 from object_detector.utils import read_toy_dataset
 from object_detector.utils import save_masks
-from object_detector.model import ToyModel
 
 if not (len(sys.argv) == 3 or len(sys.argv) == 4):
     print('Usage: evaluate.py path/to/results/dir path/to/dataset_dir path/to/output_dir')

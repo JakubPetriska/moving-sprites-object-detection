@@ -8,17 +8,16 @@ from tabulate import tabulate
 from common.utils import get_duration_minutes
 from common.utils import start_timer
 from object_detector import utils
-from toy_dataset_generator import constants
 from object_detector.model import BATCH_SIZE, ToyModel
 from object_detector.utils import generate_video_sequence
 from object_detector.utils import read_toy_dataset
 from object_detector.utils import save_masks
+from toy_dataset_generator import constants
 
 RESULT_DIR_FORMAT = os.path.join(os.pardir, os.pardir, 'results', 'result_%s')
 TENSORBOARD_LOGS_DIR = 'tensorboard_logs'
 MODEL_PLOT = 'model.png'
 MASKS_DIR = 'masks_ground_truth'
-VALIDATION_ERROR_GRAPH_FILE = 'validation_accuracy.png'
 OUTPUT_INFO_FILE = 'output'
 
 SAVE_GROUND_TRUTH_TEST_MASKS = True
@@ -27,7 +26,7 @@ SAVE_PREDICTED_TEST_MASKS = True
 SAVE_LOG_FILE = False
 
 PROGRESS_VERBOSITY = 1
-DEBUG = True
+DEBUG = False
 
 result_dir = RESULT_DIR_FORMAT % datetime.datetime.now().strftime("%Y.%m.%d-%H:%M:%S")
 if not os.path.exists(result_dir):
