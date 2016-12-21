@@ -1,7 +1,7 @@
 import datetime
 import os
 
-from keras.callbacks import TensorBoard
+from keras.callbacks import TensorBoard, ModelCheckpoint
 from keras.utils.visualize_util import plot
 from tabulate import tabulate
 
@@ -66,7 +66,11 @@ initial_test_eval = model_wrapper.evaluate(x_test, y_test)
 
 # Train the network
 tensorboard_callback = TensorBoard(log_dir=os.path.join(result_dir, TENSORBOARD_LOGS_DIR))
-model_wrapper.train(x_train, y_train, validation_data=(x_validation, y_validation), callbacks=[tensorboard_callback])
+model_checkpoint_callback = ModelCheckpoint(os.path.join(result_dir, utils.MODEL_BEST_WEIGHTS_FILE),
+                                            monitor='val_acc', verbose=PROGRESS_VERBOSITY, save_best_only=True,
+                                            save_weights_only=True)
+model_wrapper.train(x_train, y_train, validation_data=(x_validation, y_validation),
+                    callbacks=[tensorboard_callback, model_checkpoint_callback])
 
 # Save model
 print('Saving model to disk')

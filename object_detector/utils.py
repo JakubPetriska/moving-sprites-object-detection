@@ -9,6 +9,7 @@ from toy_dataset_generator import generator_utils
 # Evaluation result folder structure
 MODEL_FILE = 'model.json'
 MODEL_WEIGHTS_FILE = 'model_weights.h5'
+MODEL_BEST_WEIGHTS_FILE = 'model_best_weights.h5'  # weights of model with best validation performance
 PREDICTED_MASKS_DIR = 'masks_predicted'
 VIDEO_FILE = 'video.mp4'
 IMAGES_DIR = 'images_annotated'
