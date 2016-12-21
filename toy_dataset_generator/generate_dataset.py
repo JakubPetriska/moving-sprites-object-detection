@@ -14,9 +14,15 @@ SHOW_VIDEO_ENCODING_INFO_LOG = False
 SHOW_TIME_LOG = True
 SHOW_OBJECT_RECTANGLES = False
 
+BACKGROUND_NOISE_SCALE = 20
+BACKGROUND_COLOR_COMPONENT_MAX_DELTA = 120 / constants.FRAMES_PER_SECOND
+BACKGROUND_COLOR_BRIGHTNESS_MAX_DELTA = 210 / constants.FRAMES_PER_SECOND
 
-def apply_gaussian_noise(frame):
-    noise = np.random.normal(size=frame.shape, scale=10)
+OVERALL_NOISE_SCALE = 15
+
+
+def apply_gaussian_noise(frame, scale):
+    noise = np.random.normal(size=frame.shape, scale=scale)
     frame += noise
 
 
@@ -92,6 +98,8 @@ class SequenceGenerator:
         self.movement_functions = []
         self.scale_functions = []
 
+        self.background_color = np.array([random.random() * 255 for i in range(3)])
+
         # Linear movement
         self.movement_functions.append(
             lambda initial_position, lifetime, velocity: initial_position + velocity * lifetime)
@@ -137,9 +145,18 @@ class SequenceGenerator:
         if random.random() <= self._spawn_probability():
             self.sprites.append(self._spawn_sprite())
 
+        # Randomly adjust the background color
+        # Adjust each element
+        for i in range(3):
+            self.background_color[i] += (random.random() - 0.5) * 2 * BACKGROUND_COLOR_COMPONENT_MAX_DELTA
+        # Adjust brightness
+        self.background_color += [(random.random() - 0.5) * 3 * BACKGROUND_COLOR_BRIGHTNESS_MAX_DELTA] * 3
+        self.background_color = np.clip(self.background_color, 0, 255)
+
         frame = np.ones((constants.RESOLUTION_HEIGHT, constants.RESOLUTION_WIDTH, 3))
-        frame *= 210
-        apply_gaussian_noise(frame)
+        for i in range(3):
+            frame[:, :, i] *= self.background_color[i]
+        apply_gaussian_noise(frame, BACKGROUND_NOISE_SCALE)
 
         frame_labels = []
         for i in range(len(self.sprites) - 1, -1, -1):
@@ -148,6 +165,8 @@ class SequenceGenerator:
                 self.sprites.pop(i)
             else:
                 frame_labels.append(sprite_boundaries)
+
+        apply_gaussian_noise(frame, OVERALL_NOISE_SCALE)
 
         frame = np.clip(frame, 0, 255).astype(np.uint8)
         return frame, frame_labels
