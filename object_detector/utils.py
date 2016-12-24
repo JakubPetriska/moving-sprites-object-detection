@@ -1,3 +1,4 @@
+import csv
 import os
 
 import numpy as np
@@ -14,28 +15,40 @@ PREDICTED_MASKS_DIR = 'masks_predicted'
 VIDEO_FILE = 'video.mp4'
 IMAGES_DIR = 'images_annotated'
 
+KITTI_DIR = os.path.join(os.pardir, os.pardir, 'kitti')
+KITTI_IMAGES_DIR = os.path.join(KITTI_DIR, 'image_02')
+KITTI_LABELS_DIR = os.path.join(KITTI_DIR, 'label_02')
+KITTI_IMAGES_FILE_FORMAT = '%06d.png'
+
+KITTI_ORIGINAL_RESOLUTION_WIDTH = 1242
+KITTI_ORIGINAL_RESOLUTION_HEIGHT = 375
+KITTI_USED_RESOLUTION_WIDTH = 400
+KITTI_USED_RESOLUTION_HEIGHT = 120
+
+KITTI_ALLOWED_OBJECT_TYPES = ['Car', 'Van', 'Truck']
+
 TEST_SEQUENCE_OVERLAY_ALPHA = 0.25
 TEST_SEQUENCE_OVERLAY_COLOR = [0, 255, 0]
 
 
-def read_toy_dataset(path, model_output_shape):
+def read_toy_dataset(path, mask_shape):
     labels = generator_utils.read_labels(os.path.join(path, constants.DATASET_LABELS_FILE))
     image_path_format = os.path.join(path, constants.DATASET_IMAGES_DIR, constants.FRAME_IMAGE_FILE_NAME_FORMAT)
     x = np.empty((len(labels), constants.RESOLUTION_HEIGHT, constants.RESOLUTION_WIDTH, 3))
     y_shape = [len(labels)]
-    y_shape += model_output_shape
+    y_shape += mask_shape
     y = np.empty(y_shape)
 
-    vertical_scale_factor = model_output_shape[0] / constants.RESOLUTION_HEIGHT
-    horizontal_scale_factor = model_output_shape[0] / constants.RESOLUTION_WIDTH
+    vertical_scale_factor = mask_shape[0] / constants.RESOLUTION_HEIGHT
+    horizontal_scale_factor = mask_shape[1] / constants.RESOLUTION_WIDTH
     for i in range(0, len(labels)):
         label = labels[i]
         image = misc.imread(image_path_format % label[0])
-        mask = np.zeros(model_output_shape)
+        mask = np.zeros(mask_shape)
         for object_bounding_box in label[1:]:
-            scaled_vertical_bounds = [min(round(bound * vertical_scale_factor), model_output_shape[0] - 1)
+            scaled_vertical_bounds = [min(round(bound * vertical_scale_factor), mask_shape[0] - 1)
                                       for bound in object_bounding_box[:2]]
-            scaled_horizontal_bounds = [min(round(bound * horizontal_scale_factor), model_output_shape[1] - 1)
+            scaled_horizontal_bounds = [min(round(bound * horizontal_scale_factor), mask_shape[1] - 1)
                                         for bound in object_bounding_box[2:]]
             top = scaled_vertical_bounds[0]
             bottom = scaled_vertical_bounds[1]
@@ -44,6 +57,67 @@ def read_toy_dataset(path, model_output_shape):
             mask[top:bottom + 1, left:right + 1] = 1
         x[i] = image
         y[i] = mask
+    return x, y
+
+
+def read_kitti_dataset(mask_shape, max_frames=-1):
+    images_dirs = os.listdir(KITTI_IMAGES_DIR)
+
+    x = np.empty((0, KITTI_USED_RESOLUTION_HEIGHT, KITTI_USED_RESOLUTION_WIDTH, 3))
+    y = np.empty([0] + list(mask_shape))
+    for images_dir_name in images_dirs:
+        images_dir_path = os.path.join(KITTI_IMAGES_DIR, images_dir_name)
+        labels_file_path = os.path.join(KITTI_LABELS_DIR, images_dir_name + '.txt')
+
+        mask_vertical_scale_factor = mask_shape[0] / KITTI_ORIGINAL_RESOLUTION_HEIGHT
+        mask_horizontal_scale_factor = mask_shape[1] / KITTI_ORIGINAL_RESOLUTION_WIDTH
+
+        with open(labels_file_path, newline='') as labels_file:
+            labels_reader = csv.reader(labels_file, delimiter=' ')
+            current_frame_index = -1
+            mask = None
+
+            for row in labels_reader:
+                frame_index = int(row[0])
+                if frame_index > current_frame_index:
+                    if (not max_frames == -1) and x.shape[0] >= max_frames:
+                        # We reached amount of frames that was requested
+                        break
+                    if mask is not None:
+                        y = np.concatenate((y, np.reshape(mask, [1] + list(mask_shape))))
+                        mask = None
+
+                    image_file_path = os.path.join(images_dir_path, KITTI_IMAGES_FILE_FORMAT) % frame_index
+                    if os.path.exists(image_file_path):
+                        image = misc.imread(image_file_path)
+                        image = misc.imresize(image, (KITTI_USED_RESOLUTION_HEIGHT, KITTI_USED_RESOLUTION_WIDTH, 3))
+                        image = np.reshape(image, [1] + list(image.shape))
+                        x = np.concatenate((x, image))
+                        mask = np.zeros(mask_shape)
+
+                        current_frame_index = frame_index
+                    else:
+                        continue
+
+                object_type = row[2]
+                if object_type in KITTI_ALLOWED_OBJECT_TYPES:
+                    box_x1 = float(row[6])
+                    box_y1 = float(row[7])
+                    box_x2 = float(row[8])
+                    box_y2 = float(row[9])
+
+                    object_bounding_box = [box_y1, box_y2, box_x1, box_x2]
+                    scaled_vertical_bounds = [min(round(bound * mask_vertical_scale_factor), mask_shape[0] - 1)
+                                              for bound in object_bounding_box[:2]]
+                    scaled_horizontal_bounds = [min(round(bound * mask_horizontal_scale_factor), mask_shape[1] - 1)
+                                                for bound in object_bounding_box[2:]]
+                    top = scaled_vertical_bounds[0]
+                    bottom = scaled_vertical_bounds[1]
+                    left = scaled_horizontal_bounds[0]
+                    right = scaled_horizontal_bounds[1]
+                    mask[top:bottom + 1, left:right + 1] = 1
+            if mask is not None:
+                y = np.concatenate((y, np.reshape(mask, [1] + list(mask_shape))))
     return x, y
 
 
@@ -69,13 +143,13 @@ def generate_video_sequence(output_path, images_dir, images, masks):
         mask = np.clip(np.copy(masks[i]), 0, 1)
         mask *= 255
         mask = np.repeat(mask.astype(np.uint8), 3, axis=2)
-        mask = misc.imresize(mask, (constants.RESOLUTION_HEIGHT, constants.RESOLUTION_WIDTH, 3))
+        mask = misc.imresize(mask, image.shape)
         mask = mask.astype(np.float)
         mask /= 255
         overlay_mask = np.empty(shape=(1, 1, 3))
         overlay_mask[0, 0] = TEST_SEQUENCE_OVERLAY_COLOR
-        overlay_mask = np.repeat(overlay_mask, constants.RESOLUTION_HEIGHT, axis=0)
-        overlay_mask = np.repeat(overlay_mask, constants.RESOLUTION_WIDTH, axis=1)
+        overlay_mask = np.repeat(overlay_mask, image.shape[0], axis=0)
+        overlay_mask = np.repeat(overlay_mask, image.shape[1], axis=1)
         overlay_mask *= TEST_SEQUENCE_OVERLAY_ALPHA
         overlay_mask *= mask
         image *= 1 - (mask * (1 - TEST_SEQUENCE_OVERLAY_ALPHA))
