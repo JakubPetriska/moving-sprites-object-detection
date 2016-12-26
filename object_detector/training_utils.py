@@ -9,12 +9,11 @@ from object_detector.utils import generate_video_sequence
 from object_detector.utils import save_masks
 
 OUTPUT_DIR = 'result_%s'
-TENSORBOARD_LOGS_DIR = 'tensorboard_logs'
 MODEL_PLOT = 'model.png'
 MASKS_DIR = 'masks_ground_truth'
 OUTPUT_INFO_FILE = 'output'
 
-LIGHT_OUTPUT = True  # Turns off all following
+LIGHT_OUTPUT = False  # Turns off all following
 SAVE_GROUND_TRUTH_TEST_MASKS = True
 SAVE_PREDICTED_TEST_MASKS = True
 GENERATE_ANNOTATED_VIDEO = True
@@ -34,7 +33,7 @@ def train_and_evaluate(model_wrapper, x_train, y_train, x_validation, y_validati
     initial_test_eval = model_wrapper.evaluate(x_test, y_test)
 
     # Train the network
-    tensorboard_callback = TensorBoard(log_dir=os.path.join(output_dir, TENSORBOARD_LOGS_DIR))
+    tensorboard_callback = TensorBoard(log_dir=output_dir)
     model_checkpoint_callback = ModelCheckpoint(os.path.join(output_dir, utils.MODEL_BEST_WEIGHTS_FILE),
                                                 monitor='val_acc', verbose=verbosity, save_best_only=True,
                                                 save_weights_only=True)
