@@ -13,7 +13,7 @@ from object_detector.utils import read_kitti_dataset
 RESULTS_DIR = 'results_kitti'
 
 PROGRESS_VERBOSITY = 1
-PLOT_MODEL = False
+PLOT_MODEL = True
 DEBUG = False
 
 BATCH_SIZE = 50

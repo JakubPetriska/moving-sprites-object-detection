@@ -13,7 +13,7 @@ from object_detector.training_utils import train_and_evaluate
 RESULTS_DIR = 'results_toy_dataset'
 
 PROGRESS_VERBOSITY = 1
-PLOT_MODEL = False
+PLOT_MODEL = True
 DEBUG = False
 
 BATCH_SIZE = 50
