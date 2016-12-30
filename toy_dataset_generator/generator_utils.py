@@ -36,7 +36,7 @@ def read_labels(input_path):
 
 
 def annotate_dataset(dataset_images_dir, labels_file_path, output_annotated_images_dir, output_video_path,
-                     show_encoding_info):
+                     show_encoding_info, allowed_types=None):
     labels = read_labels(labels_file_path)
     if not os.path.exists(output_annotated_images_dir):
         os.makedirs(output_annotated_images_dir)
@@ -47,7 +47,12 @@ def annotate_dataset(dataset_images_dir, labels_file_path, output_annotated_imag
         frame_index = frame_labels[0]
         frame = misc.imread(dataset_frame_image_path % frame_index)
         for i in range(1, len(frame_labels)):
-            object_bounding_box = frame_labels[i]
+            object_label = frame_labels[i]
+            object_type = object_label[0]
+            if allowed_types and object_type not in allowed_types:
+                # If object is not allowed skip drawing it's frame
+                continue
+            object_bounding_box = object_label[1]
             top = object_bounding_box[0]
             bottom = object_bounding_box[1]
             left = object_bounding_box[2]

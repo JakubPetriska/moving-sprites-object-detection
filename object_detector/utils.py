@@ -25,13 +25,11 @@ KITTI_ORIGINAL_RESOLUTION_HEIGHT = 375
 KITTI_USED_RESOLUTION_WIDTH = 400
 KITTI_USED_RESOLUTION_HEIGHT = 120
 
-KITTI_ALLOWED_OBJECT_TYPES = ['Car', 'Van', 'Truck']
-
 TEST_SEQUENCE_OVERLAY_ALPHA = 0.25
 TEST_SEQUENCE_OVERLAY_COLOR = [0, 255, 0]
 
 
-def read_toy_dataset(path, mask_shape):
+def read_toy_dataset(path, mask_shape, allowed_types=None):
     labels = generator_utils.read_labels(os.path.join(path, constants.DATASET_LABELS_FILE))
     image_path_format = os.path.join(path, constants.DATASET_IMAGES_DIR, constants.FRAME_IMAGE_FILE_NAME_FORMAT)
     x = np.empty((len(labels), constants.RESOLUTION_HEIGHT, constants.RESOLUTION_WIDTH, 3))
@@ -45,7 +43,12 @@ def read_toy_dataset(path, mask_shape):
         label = labels[i]
         image = misc.imread(image_path_format % label[0])
         mask = np.zeros(mask_shape)
-        for object_bounding_box in label[1:]:
+        for object_label in label[1:]:
+            object_type = object_label[0]
+            if allowed_types and object_type not in allowed_types:
+                # If object is not allowed don't put it into ground truth mask
+                continue
+            object_bounding_box = object_label[1]
             scaled_vertical_bounds = [min(round(bound * vertical_scale_factor), mask_shape[0] - 1)
                                       for bound in object_bounding_box[:2]]
             scaled_horizontal_bounds = [min(round(bound * horizontal_scale_factor), mask_shape[1] - 1)
@@ -60,7 +63,7 @@ def read_toy_dataset(path, mask_shape):
     return x, y
 
 
-def read_kitti_dataset(mask_shape, max_frames=-1):
+def read_kitti_dataset(mask_shape, max_frames=-1, allowed_types=None):
     images_dirs = os.listdir(KITTI_IMAGES_DIR)
 
     x = np.empty((0, KITTI_USED_RESOLUTION_HEIGHT, KITTI_USED_RESOLUTION_WIDTH, 3))
@@ -100,22 +103,25 @@ def read_kitti_dataset(mask_shape, max_frames=-1):
                         continue
 
                 object_type = row[2]
-                if object_type in KITTI_ALLOWED_OBJECT_TYPES:
-                    box_x1 = float(row[6])
-                    box_y1 = float(row[7])
-                    box_x2 = float(row[8])
-                    box_y2 = float(row[9])
+                if allowed_types and object_type not in allowed_types:
+                    # Skip this object if it's type is not allowed
+                    continue
+                box_x1 = float(row[6])
+                box_y1 = float(row[7])
+                box_x2 = float(row[8])
+                box_y2 = float(row[9])
 
-                    object_bounding_box = [box_y1, box_y2, box_x1, box_x2]
-                    scaled_vertical_bounds = [min(round(bound * mask_vertical_scale_factor), mask_shape[0] - 1)
-                                              for bound in object_bounding_box[:2]]
-                    scaled_horizontal_bounds = [min(round(bound * mask_horizontal_scale_factor), mask_shape[1] - 1)
-                                                for bound in object_bounding_box[2:]]
-                    top = scaled_vertical_bounds[0]
-                    bottom = scaled_vertical_bounds[1]
-                    left = scaled_horizontal_bounds[0]
-                    right = scaled_horizontal_bounds[1]
-                    mask[top:bottom + 1, left:right + 1] = 1
+                object_bounding_box = [box_y1, box_y2, box_x1, box_x2]
+                scaled_vertical_bounds = [min(round(bound * mask_vertical_scale_factor), mask_shape[0] - 1)
+                                          for bound in object_bounding_box[:2]]
+                scaled_horizontal_bounds = [min(round(bound * mask_horizontal_scale_factor), mask_shape[1] - 1)
+                                            for bound in object_bounding_box[2:]]
+                top = scaled_vertical_bounds[0]
+                bottom = scaled_vertical_bounds[1]
+                left = scaled_horizontal_bounds[0]
+                right = scaled_horizontal_bounds[1]
+                mask[top:bottom + 1, left:right + 1] = 1
+
             if mask is not None:
                 y = np.concatenate((y, np.reshape(mask, [1] + list(mask_shape))))
     return x, y

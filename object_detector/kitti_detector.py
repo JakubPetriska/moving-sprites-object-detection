@@ -23,6 +23,9 @@ DATASET_TEST_DATA_PERCENTAGE = 0.1
 
 MASK_OBJECTS_IMPORTANCE_MULTIPLIER = 5
 
+NUM_RUNS = 1
+ALLOWED_OBJECT_TYPES = ['Car', 'Van', 'Truck']
+
 
 def loss_function(y_true, y_pred):
     error_scale = tf.scalar_mul(MASK_OBJECTS_IMPORTANCE_MULTIPLIER, y_true)
@@ -62,25 +65,26 @@ class KittiModel(ExtendedModelWrapper):
         return self.model.predict(x, batch_size=BATCH_SIZE, verbose=self.verbosity)
 
 
-model_wrapper = KittiModel(verbosity=PROGRESS_VERBOSITY)
+for i in range(NUM_RUNS):
+    model_wrapper = KittiModel(verbosity=PROGRESS_VERBOSITY)
 
-model_output_shape = model_wrapper.model.layers[-1].output_shape[1:]
+    model_output_shape = model_wrapper.model.layers[-1].output_shape[1:]
 
-if not DEBUG:
-    x, y = read_kitti_dataset(model_output_shape)
-    indices = np.random.permutation(x.shape[0])
-    test_samples_count = round(len(indices) * DATASET_TEST_DATA_PERCENTAGE)
-    test_indices, training_indices = indices[:test_samples_count], indices[test_samples_count:]
-    x_test, y_test = x[test_indices], y[test_indices]
-    x_validation, y_validation = x_test, y_test
-    x_train, y_train = x[training_indices], y[training_indices]
-    print('Dataset size')
-    print(tabulate([['Training', x_train.shape[0]], ['Testing', x_test.shape[0]]], headers=['Data', 'Frame count']))
-else:
-    x_train, y_train = read_kitti_dataset(model_output_shape, max_frames=100)
-    x_test, y_test = x_train, y_train
-    x_validation, y_validation = x_test, y_test
+    if not DEBUG:
+        x, y = read_kitti_dataset(model_output_shape, allowed_types=ALLOWED_OBJECT_TYPES)
+        indices = np.random.permutation(x.shape[0])
+        test_samples_count = round(len(indices) * DATASET_TEST_DATA_PERCENTAGE)
+        test_indices, training_indices = indices[:test_samples_count], indices[test_samples_count:]
+        x_test, y_test = x[test_indices], y[test_indices]
+        x_validation, y_validation = x_test, y_test
+        x_train, y_train = x[training_indices], y[training_indices]
+        print('Dataset size')
+        print(tabulate([['Training', x_train.shape[0]], ['Testing', x_test.shape[0]]], headers=['Data', 'Frame count']))
+    else:
+        x_train, y_train = read_kitti_dataset(model_output_shape, max_frames=100, allowed_types=ALLOWED_OBJECT_TYPES)
+        x_test, y_test = x_train, y_train
+        x_validation, y_validation = x_test, y_test
 
-train_and_evaluate(model_wrapper, x_train, y_train, x_validation, y_validation, x_test, y_test,
-                   verbosity=PROGRESS_VERBOSITY, plot_model=PLOT_MODEL,
-                   results_dir=RESULTS_DIR)
+    train_and_evaluate(model_wrapper, x_train, y_train, x_validation, y_validation, x_test, y_test,
+                       verbosity=PROGRESS_VERBOSITY, plot_model=PLOT_MODEL,
+                       results_dir=RESULTS_DIR)

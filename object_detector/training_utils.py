@@ -22,7 +22,7 @@ GENERATE_ANNOTATED_VIDEO = True
 def train_and_evaluate(model_wrapper, x_train, y_train, x_validation, y_validation, x_test, y_test,
                        verbosity=1, plot_model=True, results_dir='results'):
     output_dir_name = OUTPUT_DIR % datetime.datetime.now().strftime("%Y.%m.%d-%H:%M:%S")
-    print('Output dir: %s' % output_dir_name)
+    print('\nOutput dir: %s' % output_dir_name)
     output_dir = os.path.join(os.pardir, os.pardir, results_dir, '%s') % output_dir_name
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)

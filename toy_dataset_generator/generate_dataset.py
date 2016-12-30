@@ -27,9 +27,10 @@ def apply_gaussian_noise(frame, scale):
 
 
 class Sprite:
-    def __init__(self, sprite_image, initial_position, initial_scale, velocity, movement_function,
+    def __init__(self, type, image, initial_position, initial_scale, velocity, movement_function,
                  scale_speed, scale_function):
-        self.sprite_image = sprite_image
+        self.type = type
+        self.image = image
         self.lifetime = 0
         self.initial_position = initial_position
         self.initial_scale = initial_scale
@@ -47,7 +48,7 @@ class Sprite:
         scale = self.scale_function(self.initial_scale, self.lifetime, self.scale_speed)
 
         scaled_sprite_image_size \
-            = (round(scale[0] * self.sprite_image.shape[0]), round(scale[1] * self.sprite_image.shape[1]))
+            = (round(scale[0] * self.image.shape[0]), round(scale[1] * self.image.shape[1]))
         scaled_sprite_image_size = [int(a) for a in scaled_sprite_image_size]
         top = position[0]
         bottom = top + scaled_sprite_image_size[0]
@@ -57,7 +58,7 @@ class Sprite:
                 or right < 0 or left >= constants.RESOLUTION_WIDTH:
             return None
         else:
-            scaled_sprite = misc.imresize(self.sprite_image, scaled_sprite_image_size)
+            scaled_sprite = misc.imresize(self.image, scaled_sprite_image_size)
             # Take only the visible part of sprite
             overlap_top = max(top * -1, 0)
             overlap_bottom = max(bottom - constants.RESOLUTION_HEIGHT + 1, 0)
@@ -92,9 +93,9 @@ class Sprite:
 
 
 class SequenceGenerator:
-    def __init__(self, sprite_images):
-        self.sprite_images = sprite_images
-        self.sprites = []
+    def __init__(self, sprites):
+        self.sprites = sprites
+        self.scene_sprites = []
         self.movement_functions = []
         self.scale_functions = []
 
@@ -109,7 +110,8 @@ class SequenceGenerator:
                                                                  constants.SPRITE_MIN_SCALE, 1))
 
     def _spawn_sprite(self):
-        sprite_image = random.choice(self.sprite_images)
+        sprite = random.choice(self.sprites)
+        sprite_image = sprite[1]
         half_shape = np.array(sprite_image.shape) / 2
         initial_position = np.array((random.randrange(0, constants.RESOLUTION_HEIGHT) - half_shape[0],
                                      random.randrange(0, constants.RESOLUTION_WIDTH) - half_shape[1]))
@@ -129,21 +131,21 @@ class SequenceGenerator:
                                                  sigma=constants.MEAN_SPRITE_SCALE_SPEED / 2)] * 2)
         if random.random() >= 0.5:
             scale_speed *= -1
-        return Sprite(sprite_image, initial_position, initial_scale,
+        return Sprite(sprite[0], sprite_image, initial_position, initial_scale,
                       velocity, random.choice(self.movement_functions),
                       scale_speed, random.choice(self.scale_functions))
 
     def _spawn_probability(self):
         zero_sprite_spawn_probability = 0.5
         slope = (0.2 - zero_sprite_spawn_probability) / constants.AVERAGE_SPRITE_COUNT
-        return slope * len(self.sprites) + zero_sprite_spawn_probability
+        return slope * len(self.scene_sprites) + zero_sprite_spawn_probability
 
     def generate_next_frame(self):
-        for sprite in self.sprites:
+        for sprite in self.scene_sprites:
             sprite.increase_lifetime()
 
         if random.random() <= self._spawn_probability():
-            self.sprites.append(self._spawn_sprite())
+            self.scene_sprites.append(self._spawn_sprite())
 
         # Randomly adjust the background color
         # Adjust each element
@@ -159,12 +161,12 @@ class SequenceGenerator:
         apply_gaussian_noise(frame, BACKGROUND_NOISE_SCALE)
 
         frame_labels = []
-        for i in range(len(self.sprites) - 1, -1, -1):
-            sprite_boundaries = self.sprites[i].render(frame)
+        for i in range(len(self.scene_sprites) - 1, -1, -1):
+            sprite_boundaries = self.scene_sprites[i].render(frame)
             if not sprite_boundaries:
-                self.sprites.pop(i)
+                self.scene_sprites.pop(i)
             else:
-                frame_labels.append(sprite_boundaries)
+                frame_labels.append((self.scene_sprites[i].type, sprite_boundaries))
 
         apply_gaussian_noise(frame, OVERALL_NOISE_SCALE)
 
@@ -180,17 +182,18 @@ def generate_sequence(frame_count, folder_path):
     if not os.path.exists(images_dir):
         os.makedirs(images_dir)
 
-    sprite_images = []
+    sprites = []
     for sprite_file_name in listdir(constants.SPRITES_DIR):
+        sprite_type = sprite_file_name.split('_')[0]
         image = misc.imread(os.path.join(constants.SPRITES_DIR, sprite_file_name))
         scale_factor = constants.RESOLUTION_WIDTH / image.shape[1]
         scaled_shape = [int(d * scale_factor) for d in image.shape]
         scaled_shape[2:] = image.shape[2:]
         image = misc.imresize(image, scaled_shape)
-        sprite_images.append(image)
+        sprites.append((sprite_type, image))
 
     # Generate the video frames
-    sequence_generator = SequenceGenerator(sprite_images)
+    sequence_generator = SequenceGenerator(sprites)
     frame_generation_start = utils.start_timer()
     frame_image_path_format = os.path.join(images_dir, constants.FRAME_IMAGE_FILE_NAME_FORMAT)
     sequence_labels = []
@@ -227,7 +230,8 @@ def generate_sequence(frame_count, folder_path):
 
 
 if os.path.exists(constants.OUTPUT_PATH):
-    print('Old dataset removed!!!')
+    print('Old dataset needs to be removed')
+    input('Are you sure? (Press Enter to continue)')
     shutil.rmtree(constants.OUTPUT_PATH, ignore_errors=True)
 
 print('Generating training data')

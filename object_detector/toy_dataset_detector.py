@@ -19,6 +19,9 @@ DEBUG = False
 BATCH_SIZE = 50
 TRAINING_EPOCHS = 12
 
+NUM_RUNS = 3
+ALLOWED_OBJECT_TYPES = ['1', '2']
+
 
 class ToyModel(ExtendedModelWrapper):
     def build_model(self):
@@ -48,29 +51,31 @@ class ToyModel(ExtendedModelWrapper):
         return self.model.predict(x, batch_size=BATCH_SIZE, verbose=self.verbosity)
 
 
-model_wrapper = ToyModel(verbosity=PROGRESS_VERBOSITY)
+for i in range(NUM_RUNS):
+    model_wrapper = ToyModel(verbosity=PROGRESS_VERBOSITY)
 
-model_output_shape = model_wrapper.model.layers[-1].output_shape[1:]
+    model_output_shape = model_wrapper.model.layers[-1].output_shape[1:]
 
-# Change the working directory if the script was executed from somewhere else
-os.chdir(os.path.dirname(sys.argv[0]))
-if not DEBUG:
-    x_train, y_train = read_toy_dataset(os.path.join(constants.OUTPUT_PATH, constants.TRAINING_DATASET_PATH),
-                                        model_output_shape)
-    x_validation, y_validation = read_toy_dataset(
-        os.path.join(constants.OUTPUT_PATH, constants.VALIDATION_DATASET_PATH),
-        model_output_shape)
-    x_test, y_test = read_toy_dataset(os.path.join(constants.OUTPUT_PATH, constants.TEST_DATASET_PATH), model_output_shape)
-else:
-    x_train, y_train = read_toy_dataset(os.path.join(constants.OUTPUT_PATH, constants.VALIDATION_DATASET_PATH),
-                                        model_output_shape)
-    x_train = x_train[:2 * BATCH_SIZE]
-    y_train = y_train[:2 * BATCH_SIZE]
-    x_validation = x_train
-    y_validation = y_train
-    x_test = x_train
-    y_test = y_train
+    # Change the working directory if the script was executed from somewhere else
+    os.chdir(os.path.dirname(sys.argv[0]))
+    if not DEBUG:
+        x_train, y_train = read_toy_dataset(os.path.join(constants.OUTPUT_PATH, constants.TRAINING_DATASET_PATH),
+                                            model_output_shape, allowed_types=ALLOWED_OBJECT_TYPES)
+        x_validation, y_validation = read_toy_dataset(
+            os.path.join(constants.OUTPUT_PATH, constants.VALIDATION_DATASET_PATH),
+            model_output_shape, allowed_types=ALLOWED_OBJECT_TYPES)
+        x_test, y_test = read_toy_dataset(os.path.join(constants.OUTPUT_PATH, constants.TEST_DATASET_PATH),
+                                          model_output_shape, allowed_types=ALLOWED_OBJECT_TYPES)
+    else:
+        x_train, y_train = read_toy_dataset(os.path.join(constants.OUTPUT_PATH, constants.TEST_DATASET_PATH),
+                                            model_output_shape, allowed_types=ALLOWED_OBJECT_TYPES)
+        x_train = x_train[:2 * BATCH_SIZE]
+        y_train = y_train[:2 * BATCH_SIZE]
+        x_validation = x_train
+        y_validation = y_train
+        x_test = x_train
+        y_test = y_train
 
-train_and_evaluate(model_wrapper, x_train, y_train, x_validation, y_validation, x_test, y_test,
-                   verbosity=PROGRESS_VERBOSITY, plot_model=PLOT_MODEL,
-                   results_dir=RESULTS_DIR)
+    train_and_evaluate(model_wrapper, x_train, y_train, x_validation, y_validation, x_test, y_test,
+                       verbosity=PROGRESS_VERBOSITY, plot_model=PLOT_MODEL,
+                       results_dir=RESULTS_DIR)
