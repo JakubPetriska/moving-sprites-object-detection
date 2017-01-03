@@ -1,6 +1,7 @@
 import csv
 import os
 
+import datetime
 import numpy as np
 from scipy import misc
 
@@ -63,17 +64,25 @@ def read_toy_dataset(path, mask_shape, allowed_types=None):
     return x, y
 
 
-def read_kitti_dataset(mask_shape, max_frames=-1, allowed_types=None):
+def read_kitti_dataset(mask_shape, max_frames=-1, allowed_types=None, log=False):
     images_dirs = os.listdir(KITTI_IMAGES_DIR)
 
-    x = np.empty((0, KITTI_USED_RESOLUTION_HEIGHT, KITTI_USED_RESOLUTION_WIDTH, 3))
-    y = np.empty([0] + list(mask_shape))
-    for images_dir_name in images_dirs:
+    mask_vertical_scale_factor = mask_shape[0] / KITTI_ORIGINAL_RESOLUTION_HEIGHT
+    mask_horizontal_scale_factor = mask_shape[1] / KITTI_ORIGINAL_RESOLUTION_WIDTH
+
+    total_images_count = 0
+    for images_dir_name in sorted(images_dirs):
+        images_dir_path = os.path.join(KITTI_IMAGES_DIR, images_dir_name)
+        total_images_count += len(os.listdir(images_dir_path))
+
+    x = np.empty((total_images_count, KITTI_USED_RESOLUTION_HEIGHT, KITTI_USED_RESOLUTION_WIDTH, 3))
+    y = np.empty([total_images_count] + list(mask_shape))
+    image_index = 0
+    for images_dir_name in sorted(images_dirs):
+        if log:
+            print('%s: Reading dir %s' % (datetime.datetime.now().strftime("%Y.%m.%d-%H:%M:%S"), images_dir_name))
         images_dir_path = os.path.join(KITTI_IMAGES_DIR, images_dir_name)
         labels_file_path = os.path.join(KITTI_LABELS_DIR, images_dir_name + '.txt')
-
-        mask_vertical_scale_factor = mask_shape[0] / KITTI_ORIGINAL_RESOLUTION_HEIGHT
-        mask_horizontal_scale_factor = mask_shape[1] / KITTI_ORIGINAL_RESOLUTION_WIDTH
 
         with open(labels_file_path, newline='') as labels_file:
             labels_reader = csv.reader(labels_file, delimiter=' ')
@@ -87,7 +96,7 @@ def read_kitti_dataset(mask_shape, max_frames=-1, allowed_types=None):
                         # We reached amount of frames that was requested
                         break
                     if mask is not None:
-                        y = np.concatenate((y, np.reshape(mask, [1] + list(mask_shape))))
+                        y[image_index] = np.reshape(mask, [1] + list(mask_shape))
                         mask = None
 
                     image_file_path = os.path.join(images_dir_path, KITTI_IMAGES_FILE_FORMAT) % frame_index
@@ -95,7 +104,7 @@ def read_kitti_dataset(mask_shape, max_frames=-1, allowed_types=None):
                         image = misc.imread(image_file_path)
                         image = misc.imresize(image, (KITTI_USED_RESOLUTION_HEIGHT, KITTI_USED_RESOLUTION_WIDTH, 3))
                         image = np.reshape(image, [1] + list(image.shape))
-                        x = np.concatenate((x, image))
+                        x[image_index] = image
                         mask = np.zeros(mask_shape)
 
                         current_frame_index = frame_index
@@ -123,7 +132,9 @@ def read_kitti_dataset(mask_shape, max_frames=-1, allowed_types=None):
                 mask[top:bottom + 1, left:right + 1] = 1
 
             if mask is not None:
-                y = np.concatenate((y, np.reshape(mask, [1] + list(mask_shape))))
+                y[image_index] = np.reshape(mask, [1] + list(mask_shape))
+
+        image_index += 1
     return x, y
 
 
