@@ -70,55 +70,66 @@ def read_kitti_dataset(mask_shape, max_frames=-1, allowed_types=None, log=False)
     mask_vertical_scale_factor = mask_shape[0] / KITTI_ORIGINAL_RESOLUTION_HEIGHT
     mask_horizontal_scale_factor = mask_shape[1] / KITTI_ORIGINAL_RESOLUTION_WIDTH
 
-    total_images_count = 0
-    for images_dir_name in sorted(images_dirs):
-        images_dir_path = os.path.join(KITTI_IMAGES_DIR, images_dir_name)
-        total_images_count += len(os.listdir(images_dir_path))
+    if max_frames > 0:
+        total_images_count = max_frames
+    else:
+        total_images_count = 0
+        for images_dir_name in sorted(images_dirs):
+            images_dir_path = os.path.join(KITTI_IMAGES_DIR, images_dir_name)
+            total_images_count += len(os.listdir(images_dir_path))
 
     x = np.empty((total_images_count, KITTI_USED_RESOLUTION_HEIGHT, KITTI_USED_RESOLUTION_WIDTH, 3))
     y = np.empty([total_images_count] + list(mask_shape))
     image_index = 0
     for images_dir_name in sorted(images_dirs):
+        if image_index >= total_images_count:
+            break
         if log:
             print('%s: Reading dir %s' % (datetime.datetime.now().strftime("%Y.%m.%d-%H:%M:%S"), images_dir_name))
         images_dir_path = os.path.join(KITTI_IMAGES_DIR, images_dir_name)
         labels_file_path = os.path.join(KITTI_LABELS_DIR, images_dir_name + '.txt')
 
+        # First read the labels for the whole sequence, read only the allowed objects
+        sequence_labels = []
         with open(labels_file_path, newline='') as labels_file:
             labels_reader = csv.reader(labels_file, delimiter=' ')
             current_frame_index = -1
-            mask = None
-
             for row in labels_reader:
                 frame_index = int(row[0])
                 if frame_index > current_frame_index:
-                    if (not max_frames == -1) and x.shape[0] >= max_frames:
-                        # We reached amount of frames that was requested
-                        break
-                    if mask is not None:
-                        y[image_index] = np.reshape(mask, [1] + list(mask_shape))
-                        mask = None
-
-                    image_file_path = os.path.join(images_dir_path, KITTI_IMAGES_FILE_FORMAT) % frame_index
-                    if os.path.exists(image_file_path):
-                        image = misc.imread(image_file_path)
-                        image = misc.imresize(image, (KITTI_USED_RESOLUTION_HEIGHT, KITTI_USED_RESOLUTION_WIDTH, 3))
-                        image = np.reshape(image, [1] + list(image.shape))
-                        x[image_index] = image
-                        mask = np.zeros(mask_shape)
-
-                        current_frame_index = frame_index
-                    else:
-                        continue
+                    # Labels of new frame are starting
+                    # It's possible that some frames were skipped since they do not contain any objects
+                    for i in range(frame_index - current_frame_index):
+                        sequence_labels.append([])
+                    current_frame_index = frame_index
 
                 object_type = row[2]
-                if allowed_types and object_type not in allowed_types:
-                    # Skip this object if it's type is not allowed
-                    continue
-                box_x1 = float(row[6])
-                box_y1 = float(row[7])
-                box_x2 = float(row[8])
-                box_y2 = float(row[9])
+                if not allowed_types or object_type in allowed_types:
+                    # If the object is allowed
+                    box_x1 = float(row[6])
+                    box_y1 = float(row[7])
+                    box_x2 = float(row[8])
+                    box_y2 = float(row[9])
+                    sequence_labels[-1].append((object_type, box_x1, box_y1, box_x2, box_y2))
+
+        # Now read the frames and create ground truth masks
+        for frame_index in range(len(sequence_labels)):
+            if image_index >= total_images_count:
+                break
+
+            image_file_path = os.path.join(images_dir_path, KITTI_IMAGES_FILE_FORMAT) % frame_index
+            image = misc.imread(image_file_path)
+            image = misc.imresize(image, (KITTI_USED_RESOLUTION_HEIGHT, KITTI_USED_RESOLUTION_WIDTH, 3))
+            image = np.reshape(image, [1] + list(image.shape))
+            x[image_index] = image
+
+            frame_labels = sequence_labels[frame_index]
+            mask = np.zeros(mask_shape)
+            for object_label in frame_labels:
+                box_x1 = object_label[1]
+                box_y1 = object_label[2]
+                box_x2 = object_label[3]
+                box_y2 = object_label[4]
 
                 object_bounding_box = [box_y1, box_y2, box_x1, box_x2]
                 scaled_vertical_bounds = [min(round(bound * mask_vertical_scale_factor), mask_shape[0] - 1)
@@ -131,10 +142,11 @@ def read_kitti_dataset(mask_shape, max_frames=-1, allowed_types=None, log=False)
                 right = scaled_horizontal_bounds[1]
                 mask[top:bottom + 1, left:right + 1] = 1
 
-            if mask is not None:
                 y[image_index] = np.reshape(mask, [1] + list(mask_shape))
+            image_index += 1
 
-        image_index += 1
+    if not image_index == total_images_count:
+        raise ValueError('Number of frames not matching')
     return x, y
 
 
