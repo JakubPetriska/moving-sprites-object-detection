@@ -78,8 +78,6 @@ for i in range(NUM_RUNS):
         x_test, y_test = x[test_indices], y[test_indices]
         x_validation, y_validation = x_test, y_test
         x_train, y_train = x[training_indices], y[training_indices]
-        print('Dataset size')
-        print(tabulate([['Training', x_train.shape[0]], ['Testing', x_test.shape[0]]], headers=['Data', 'Frame count']))
 
         del test_indices, training_indices
     else:
@@ -87,6 +85,9 @@ for i in range(NUM_RUNS):
         x_train, y_train = x, y
         x_test, y_test = x_train, y_train
         x_validation, y_validation = x_test, y_test
+
+    print('Dataset size')
+    print(tabulate([['Training', x_train.shape[0]], ['Testing', x_test.shape[0]]], headers=['Data', 'Frame count']))
 
     train_and_evaluate(model_wrapper, x_train, y_train, x_validation, y_validation, x_test, y_test,
                        verbosity=PROGRESS_VERBOSITY, plot_model=PLOT_MODEL,
