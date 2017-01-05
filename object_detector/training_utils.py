@@ -1,6 +1,7 @@
 import datetime
 import os
 
+import gc
 from keras.callbacks import TensorBoard, ModelCheckpoint
 from tabulate import tabulate
 
@@ -65,11 +66,6 @@ def train_and_evaluate(model_wrapper, x_train, y_train, x_validation, y_validati
                                         os.path.join(output_dir, utils.IMAGES_DIR),
                                         x_test, y_predicted)
 
-    # Plot the model
-    if plot_model:
-        from keras.utils.visualize_util import plot
-        plot(model_wrapper.model, to_file=os.path.join(output_dir, MODEL_PLOT), show_shapes=True)
-
     evaluation_table = tabulate([['Training', initial_training_eval[0], initial_training_eval[1],
                                   final_training_eval[0], final_training_eval[1]],
                                  ['Validation', initial_validation_eval[0], initial_validation_eval[1],
@@ -80,3 +76,8 @@ def train_and_evaluate(model_wrapper, x_train, y_train, x_validation, y_validati
     with open(os.path.join(output_dir, OUTPUT_INFO_FILE), mode='w') as output_file:
         output_file.write(evaluation_table)
     print('\n' + evaluation_table)
+
+    # Plot the model
+    if plot_model:
+        from keras.utils.visualize_util import plot
+        plot(model_wrapper.model, to_file=os.path.join(output_dir, MODEL_PLOT), show_shapes=True)

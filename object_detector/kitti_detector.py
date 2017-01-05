@@ -13,7 +13,7 @@ from object_detector.utils import read_kitti_dataset
 RESULTS_DIR = 'results_kitti'
 
 PROGRESS_VERBOSITY = 1
-PLOT_MODEL = True
+PLOT_MODEL = False
 DEBUG = False
 
 BATCH_SIZE = 50
@@ -21,7 +21,7 @@ TRAINING_EPOCHS = 12
 
 DATASET_TEST_DATA_PERCENTAGE = 0.1
 
-MASK_OBJECTS_IMPORTANCE_MULTIPLIER = 3
+MASK_OBJECTS_IMPORTANCE_MULTIPLIER = 8
 
 NUM_RUNS = 3
 ALLOWED_OBJECT_TYPES = ['Car', 'Van', 'Truck']
@@ -80,11 +80,16 @@ for i in range(NUM_RUNS):
         x_train, y_train = x[training_indices], y[training_indices]
         print('Dataset size')
         print(tabulate([['Training', x_train.shape[0]], ['Testing', x_test.shape[0]]], headers=['Data', 'Frame count']))
+
+        del test_indices, training_indices
     else:
-        x_train, y_train = read_kitti_dataset(model_output_shape, max_frames=100, allowed_types=ALLOWED_OBJECT_TYPES)
+        x, y = read_kitti_dataset(model_output_shape, max_frames=100, allowed_types=ALLOWED_OBJECT_TYPES)
+        x_train, y_train = x, y
         x_test, y_test = x_train, y_train
         x_validation, y_validation = x_test, y_test
 
     train_and_evaluate(model_wrapper, x_train, y_train, x_validation, y_validation, x_test, y_test,
                        verbosity=PROGRESS_VERBOSITY, plot_model=PLOT_MODEL,
                        results_dir=RESULTS_DIR)
+
+    del x_train, y_train, x_test, y_test, x_validation, y_validation, x, y
