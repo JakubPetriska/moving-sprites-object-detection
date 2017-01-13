@@ -12,8 +12,7 @@ FRAMES_PER_SECOND = 8
 
 
 def save_masks(path, masks):
-    """
-    Save masks either generated, or ground truth into the directory on given path as image files.
+    """Save masks either generated, or ground truth into the directory on given path as image files.
     :param path: Path of folder to which the masks will be saved.
     :param masks: Masks to save
     """
@@ -30,8 +29,7 @@ def save_masks(path, masks):
 
 
 def create_video(images_dir, output_file_path, show_encoding_info=False):
-    """
-    Generate video file from images in given directory.
+    """Generate video file from images in given directory.
     The images in the directory must have the file name format specified by constants.FRAME_IMAGE_FILE_NAME_FORMAT.
     :param images_dir: Directory in which the frame images for video are saved.
     :param output_file_path: Output file path at which the video file will be saved.
@@ -44,8 +42,7 @@ def create_video(images_dir, output_file_path, show_encoding_info=False):
 
 
 def generate_video_frames(images, masks, images_dir):
-    """
-    Generate frames of annotated video sequence from given input images and their masks.
+    """Generate frames of annotated video sequence from given input images and their masks.
     :param images: Input images.
     :param masks: Masks of the input images.
     :param images_dir: Directory in which the video frames images will be saved.

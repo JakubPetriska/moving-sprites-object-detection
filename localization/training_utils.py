@@ -4,7 +4,13 @@ import numpy as np
 
 
 def create_masks(x, labels, mask_shape, allowed_objects=None):
-    # TODO comment
+    """Create masks that serve as training ground truth.
+    :param x: Training images.
+    :param labels: Labels of the training images.
+    :param mask_shape: Shape of the masks.
+    :param allowed_objects: Types of objects that should be put into the masks.
+    :return: The created masks.
+    """
     # TODO test
     bounds_y_scale_factor = mask_shape[0] / x.shape[1]
     bounds_x_scale_factor = mask_shape[1] / x.shape[2]
@@ -26,7 +32,15 @@ def create_masks(x, labels, mask_shape, allowed_objects=None):
 
 
 def split_data(x, y, validation_split, num_sets):
-    # TODO comment
+    """Create multiple data splits into training and validation data.
+    The splitting is very similar to k-fold cross validation but the requested number of sets can be lower than k,
+    in which case the folds for validation data are selected randomly.
+    :param x: Training images.
+    :param y: Labels of training images.
+    :param validation_split: Percentage of data that is used for validation.
+    :param num_sets: Number of data sets needed.
+    :return: The split datasets.
+    """
     # TODO test
     data_slice_count = int(1 / validation_split)
 

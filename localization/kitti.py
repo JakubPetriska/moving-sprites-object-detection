@@ -15,8 +15,7 @@ KITTI_RESOLUTION_HEIGHT = 375
 
 
 def read_kitti_dataset(image_size=None, max_frames=-1, log=False):
-    """
-    Reads images of KITTI dataset and their appropriate labels.
+    """Reads images of KITTI dataset and their appropriate labels.
 
     The list of labels contains list for each frame. The list for given frame contains tuples with each
     tuple representing one object in the frame. The tuple syntax is as follows:
