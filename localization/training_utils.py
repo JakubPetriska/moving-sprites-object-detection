@@ -11,7 +11,6 @@ def create_masks(x, labels, mask_shape, allowed_objects=None):
     :param allowed_objects: Types of objects that should be put into the masks.
     :return: The created masks.
     """
-    # TODO test
     bounds_y_scale_factor = mask_shape[0] / x.shape[1]
     bounds_x_scale_factor = mask_shape[1] / x.shape[2]
 
@@ -31,7 +30,7 @@ def create_masks(x, labels, mask_shape, allowed_objects=None):
     return y
 
 
-def split_data(x, y, validation_split, num_sets):
+def split_data(x, y, validation_split, num_sets=-1):
     """Create multiple data splits into training and validation data.
     The splitting is very similar to k-fold cross validation but the requested number of sets can be lower than k,
     in which case the folds for validation data are selected randomly.
@@ -39,10 +38,11 @@ def split_data(x, y, validation_split, num_sets):
     :param y: Labels of training images.
     :param validation_split: Percentage of data that is used for validation.
     :param num_sets: Number of data sets needed.
-    :return: The split datasets.
+    :return: The split datasets as tuples in format (x_train, y_train, x_val, y_val).
     """
-    # TODO test
     data_slice_count = int(1 / validation_split)
+    if num_sets == -1:
+        num_sets = data_slice_count
 
     if num_sets > data_slice_count:
         raise ValueError('Cannot generate more data sets than the number of validation data slices.')
@@ -52,7 +52,7 @@ def split_data(x, y, validation_split, num_sets):
         for i in range(num_sets):
             validation_data_slice_index = -1
             while validation_data_slice_index == -1 or validation_data_slice_index in validation_data_slice_indices:
-                validation_data_slice_index = random.randint(0, data_slice_count)
+                validation_data_slice_index = random.randint(0, data_slice_count - 1)
             validation_data_slice_indices.append(validation_data_slice_index)
     else:
         validation_data_slice_indices = range(num_sets)
