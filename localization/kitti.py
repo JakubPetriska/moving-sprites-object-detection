@@ -21,7 +21,8 @@ def read_kitti_dataset(image_size=None, max_frames=-1, log=False):
     tuple representing one object in the frame. The tuple syntax is as follows:
         (object_type, object_id, left, top, right, bottom)
     where bounds are coordinates of pixels on which object bounding boxes lay. So right is coordinate of
-    right bounding box side as indexed from the left side of the image. Note that the boundaries are floats.
+    right bounding box side as indexed from the left side of the image. Vertical coordinates are relative to top edge.
+    Note that the boundaries are floats.
     :param image_size: Size into which the images should scaled after as tuple (height, width).
             If None images will be kept at their original resolution. Defaults to None.
     :param max_frames: Max frames to be read. If <=0 all images will be read. Defaults to -1.

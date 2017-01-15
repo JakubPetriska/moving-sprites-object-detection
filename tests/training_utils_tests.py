@@ -1,3 +1,4 @@
+import random
 import unittest
 
 import numpy as np
@@ -6,7 +7,76 @@ from localization.training_utils import split_data
 
 
 class MaskCreationTests(unittest.TestCase):
-    pass
+    @staticmethod
+    def _generate_direction_bounds(dimension_length):
+        smaller, bigger = 0, 0
+        while smaller == bigger:
+            smaller, bigger = [random.randint(0, dimension_length - 1) for i in range(2)]
+        if smaller > bigger:
+            smaller, bigger = bigger, smaller
+        return smaller, bigger
+
+    @staticmethod
+    def _generate_random_label_for_frame(frame_shape, objects):
+        """
+        Randomly generate labels for one frame.
+        :param frame_shape: Dimensions of the frame in format (height, width).
+        :param objects: List of tuples containing string and int representing types of objects and their ids
+                        for which the labels will be generated. Number of objects in this list corresponds to
+                        the number of objects in the label. Objects do not have to be unique.
+        :return: The random label for one frame.
+        """
+        if not len(frame_shape) == 2:
+            raise ValueError('Frames have exactly 2 dimensions.')
+
+        frame_label = []
+        for object_type, object_id in objects:
+            top, bottom = MaskCreationTests._generate_direction_bounds(frame_shape[0])
+            left, right = MaskCreationTests._generate_direction_bounds(frame_shape[1])
+            frame_label.append((object_type, object_id, left, top, right, bottom))
+        return frame_label
+
+    def _test_generated_label_validity(self, frame_shape, objects, label):
+        self.assertEqual(len(label), len(objects))
+        for i in range(len(objects)):
+            object_type, object_id = objects[i]
+            object_label = label[i]
+            self.assertEqual(len(object_label), 6)
+            self.assertEqual(object_type, object_label[0])
+            self.assertEqual(object_id, object_label[1])
+
+            left = object_label[2]
+            top = object_label[3]
+            right = object_label[4]
+            bottom = object_label[5]
+
+            self.assertTrue(left < right)
+            self.assertTrue(top < bottom)
+            for bound in (left, right):
+                self.assertTrue(bound >= 0)
+                self.assertTrue(bound < frame_shape[1])
+            for bound in (top, bottom):
+                self.assertTrue(bound >= 0)
+                self.assertTrue(bound < frame_shape[0])
+
+    def test_label_generating(self):
+        for i in range(10):
+            non_duplicit_objects = [('object_%s' % i, i) for i in range(5000)]
+            non_duplicit_objects_frame_shape = (random.randint(1, 1000), random.randint(1, 1000))
+            self._test_generated_label_validity(non_duplicit_objects_frame_shape, non_duplicit_objects,
+                                                self._generate_random_label_for_frame(non_duplicit_objects_frame_shape,
+                                                                                      non_duplicit_objects))
+
+        for i in range(10):
+            duplicit_objects = [('object_%s' % i, i) for i in range(5000)] + [('object_%s' % i, i) for i in range(1000)]
+            duplicit_objects_frame_shape = (random.randint(1, 1000), random.randint(1, 1000))
+            self._test_generated_label_validity(duplicit_objects_frame_shape, duplicit_objects,
+                                                self._generate_random_label_for_frame(duplicit_objects_frame_shape,
+                                                                                      duplicit_objects))
+
+    def test_mask_creation(self):
+        # TODO
+        pass
 
 
 class TestDataset():

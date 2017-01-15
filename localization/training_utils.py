@@ -3,12 +3,12 @@ import random
 import numpy as np
 
 
-def create_masks(x, labels, mask_shape, allowed_objects=None):
+def create_masks(x, labels, mask_shape, allowed_object_types=None):
     """Create masks that serve as training ground truth.
     :param x: Training images.
     :param labels: Labels of the training images.
     :param mask_shape: Shape of the masks.
-    :param allowed_objects: Types of objects that should be put into the masks.
+    :param allowed_object_types: Types of objects that should be put into the masks.
     :return: The created masks.
     """
     bounds_y_scale_factor = mask_shape[0] / x.shape[1]
@@ -20,7 +20,7 @@ def create_masks(x, labels, mask_shape, allowed_objects=None):
         mask = np.zeros(mask_shape)
         for object_label in frame_labels:
             object_type = object_label[0]
-            if not allowed_objects or object_type in allowed_objects:
+            if not allowed_object_types or object_type in allowed_object_types:
                 box_x1 = round(object_label[1] * bounds_x_scale_factor)
                 box_y1 = round(object_label[2] * bounds_y_scale_factor)
                 box_x2 = round(object_label[3] * bounds_x_scale_factor)
