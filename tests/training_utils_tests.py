@@ -1,10 +1,12 @@
-import inspect
+import os
 import random
 import unittest
 
 import numpy as np
 
+from localization.kitti import read_kitti_dataset
 from localization.training_utils import split_data, create_masks
+from localization.utils import generate_video_frames
 
 
 class MaskCreationTests(unittest.TestCase):
@@ -96,8 +98,6 @@ class MaskCreationTests(unittest.TestCase):
                                                 MaskCreationTests._generate_random_label_for_frame(
                                                     non_unique_objects_frame_shape, none_unique_objects))
 
-    TEST_REPETITIONS = 1
-
     def _test_masks_validity(self, frame_shape, labels, masks, allowed_objects=None):
         mask_shape = masks[0].shape
         vertical_scale = frame_shape[0] / mask_shape[0]
@@ -135,10 +135,11 @@ class MaskCreationTests(unittest.TestCase):
                     else:
                         self.assertEqual(mask_value, 0, message + ' Should be 0.')
 
+    TEST_REPETITIONS = 1
+
     def test_single_frame_sequence(self):
         for i in range(MaskCreationTests.TEST_REPETITIONS):
             frame_shape = MaskCreationTests._generate_random_frame_shape(100, 100)
-            print('%s, run %s: frame shape %s' % (inspect.stack()[0][3], i, str(frame_shape)))
             frame_label = MaskCreationTests._generate_random_label_for_frame(
                 frame_shape,
                 MaskCreationTests._generate_objects(30, all_unique=True, random_count=True))
@@ -149,7 +150,6 @@ class MaskCreationTests(unittest.TestCase):
         for i in range(MaskCreationTests.TEST_REPETITIONS):
             sequence_frame_count = random.randint(1, 10)
             frame_shape = MaskCreationTests._generate_random_frame_shape(100, 100)
-            print('%s, run %s: frame shape %s' % (inspect.stack()[0][3], i, str(frame_shape)))
             frame_labels = [MaskCreationTests._generate_random_label_for_frame(
                 frame_shape,
                 MaskCreationTests._generate_objects(30, all_unique=False, random_count=True))
@@ -163,7 +163,6 @@ class MaskCreationTests(unittest.TestCase):
         sequence_frame_count = 3
         for i in range(MaskCreationTests.TEST_REPETITIONS):
             frame_shape = MaskCreationTests._generate_random_frame_shape(100, 100)
-            print('%s, run %s: frame shape %s' % (inspect.stack()[0][3], i, str(frame_shape)))
             frame_labels = [MaskCreationTests._generate_random_label_for_frame(frame_shape, [])
                             for i in range(sequence_frame_count)]
             masks = create_masks([sequence_frame_count] + list(frame_shape), frame_labels, frame_shape)
@@ -173,7 +172,6 @@ class MaskCreationTests(unittest.TestCase):
         sequence_frame_count = 3
         for i in range(MaskCreationTests.TEST_REPETITIONS):
             frame_shape = MaskCreationTests._generate_random_frame_shape(100, 100)
-            print('%s, run %s: frame shape %s' % (inspect.stack()[0][3], i, str(frame_shape)))
             frame_labels = [MaskCreationTests._generate_random_label_for_frame(
                 frame_shape, MaskCreationTests._generate_objects(1, random_count=False))
                             for i in range(sequence_frame_count)]
@@ -186,13 +184,19 @@ class MaskCreationTests(unittest.TestCase):
             # Make mask shape half the dimensions of frame shape
             mask_shape = MaskCreationTests._generate_random_frame_shape(50, 50)
             frame_shape = [i * 2 for i in mask_shape]
-            print('%s, run %s: frame shape %s' % (inspect.stack()[0][3], i, str(frame_shape)))
             frame_labels = [MaskCreationTests._generate_random_label_for_frame(
                 frame_shape,
                 MaskCreationTests._generate_objects(1, all_unique=False, random_count=True))  # 20
                             for i in range(sequence_frame_count)]
             masks = create_masks([sequence_frame_count] + list(frame_shape), frame_labels, mask_shape)
             self._test_masks_validity(frame_shape, frame_labels, masks)
+
+    def test_visual_masks_test(self):
+        """Generates images annotated with created masks so they can be inspected."""
+        mask_shape = (24, 94, 1)
+        x, labels = read_kitti_dataset((120, 400), max_frames=200)
+        y = create_masks(x.shape, labels, mask_shape)
+        generate_video_frames(x, y, os.path.join(os.pardir, os.pardir, 'test_masks'))
 
 
 class TestDataset():

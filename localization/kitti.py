@@ -72,11 +72,12 @@ def read_kitti_dataset(image_size=None, max_frames=-1, log=False):
                     current_frame_index = frame_index
 
                 object_type = row[2]
+                object_id = row[3]
                 box_x1 = min(float(row[6]) * bounds_x_scale_factor, image_size[1])
                 box_y1 = min(float(row[7]) * bounds_y_scale_factor, image_size[0])
                 box_x2 = min(float(row[8]) * bounds_x_scale_factor, image_size[1])
                 box_y2 = min(float(row[9]) * bounds_y_scale_factor, image_size[0])
-                sequence_labels[-1].append((object_type, box_y1, box_y2, box_x1, box_x2))
+                sequence_labels[-1].append((object_type, object_id, box_y1, box_y2, box_x1, box_x2))
 
         # Now read the frames and append their labels into the result labels list
         for frame_index in range(len(sequence_labels)):
