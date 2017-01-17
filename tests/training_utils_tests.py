@@ -189,30 +189,9 @@ class MaskCreationTests(unittest.TestCase):
             print('%s, run %s: frame shape %s' % (inspect.stack()[0][3], i, str(frame_shape)))
             frame_labels = [MaskCreationTests._generate_random_label_for_frame(
                 frame_shape,
-                MaskCreationTests._generate_objects(1, all_unique=False, random_count=True)) # 20
+                MaskCreationTests._generate_objects(1, all_unique=False, random_count=True))  # 20
                             for i in range(sequence_frame_count)]
             masks = create_masks([sequence_frame_count] + list(frame_shape), frame_labels, mask_shape)
-            self._test_masks_validity(frame_shape, frame_labels, masks)
-
-    def _test_mask_any_size(self):
-        for i in range(MaskCreationTests.TEST_REPETITIONS):
-            sequence_frame_count = 1#random.randint(1, 10)
-            frame_shape = (13, 13)#MaskCreationTests._generate_random_frame_shape(100, 100)
-            mask_shape = [round(i * random.uniform(0.4, 0.7)) for i in frame_shape]
-            print('%s, run %s: frame shape %s' % (inspect.stack()[0][3], i, str(frame_shape)))
-            # frame_labels = [MaskCreationTests._generate_random_label_for_frame(
-            #     frame_shape,
-            #     MaskCreationTests._generate_objects(30, all_unique=False, random_count=True))
-            #                 for i in range(sequence_frame_count)]
-            frame_labels = [MaskCreationTests._generate_random_label_for_frame(
-                frame_shape,
-                MaskCreationTests._generate_objects(1))]
-            masks = create_masks([sequence_frame_count] + list(frame_shape), frame_labels, mask_shape)
-
-            print(create_masks([sequence_frame_count] + list(frame_shape), frame_labels, frame_shape))
-            print(str(masks[0]))
-            print(str(frame_labels[0][0][2:]))
-
             self._test_masks_validity(frame_shape, frame_labels, masks)
 
 
