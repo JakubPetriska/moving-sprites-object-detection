@@ -48,7 +48,7 @@ if PLOT_MODEL:
 
 # Read data
 x, labels = read_kitti_dataset((KITTI_USED_RESOLUTION_HEIGHT, KITTI_USED_RESOLUTION_WIDTH), max_frames=max_frames)
-y = create_masks(x, labels, mask_shape)
+y = create_masks(x.shape, labels, mask_shape)
 
 # Split data into multiple training/validation sets for multiple runs
 data_sets = split_data(x, y, VALIDATION_DATA_SPLIT, num_runs)

@@ -19,7 +19,7 @@ def read_kitti_dataset(image_size=None, max_frames=-1, log=False):
 
     The list of labels contains list for each frame. The list for given frame contains tuples with each
     tuple representing one object in the frame. The tuple syntax is as follows:
-        (object_type, object_id, left, top, right, bottom)
+        (object_type, object_id, top, bottom, left, right)
     where bounds are coordinates of pixels on which object bounding boxes lay. So right is coordinate of
     right bounding box side as indexed from the left side of the image. Vertical coordinates are relative to top edge.
     Note that the boundaries are floats.
@@ -76,7 +76,7 @@ def read_kitti_dataset(image_size=None, max_frames=-1, log=False):
                 box_y1 = min(float(row[7]) * bounds_y_scale_factor, image_size[0])
                 box_x2 = min(float(row[8]) * bounds_x_scale_factor, image_size[1])
                 box_y2 = min(float(row[9]) * bounds_y_scale_factor, image_size[0])
-                sequence_labels[-1].append((object_type, box_x1, box_y1, box_x2, box_y2))
+                sequence_labels[-1].append((object_type, box_y1, box_y2, box_x1, box_x2))
 
         # Now read the frames and append their labels into the result labels list
         for frame_index in range(len(sequence_labels)):

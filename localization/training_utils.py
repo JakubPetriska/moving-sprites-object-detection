@@ -3,30 +3,36 @@ import random
 import numpy as np
 
 
-def create_masks(x, labels, mask_shape, allowed_object_types=None):
+def _convert_from_frame_to_mask_coordinates(coordinate, scale_factor, dimension_size):
+    return min(int(coordinate * scale_factor), dimension_size - 1)
+
+
+def create_masks(data_size, labels, mask_shape, allowed_object_types=None):
     """Create masks that serve as training ground truth.
-    :param x: Training images.
+    :param data_size: Size of the data in format (sample_count, sample_height, sample_width)
     :param labels: Labels of the training images.
     :param mask_shape: Shape of the masks.
     :param allowed_object_types: Types of objects that should be put into the masks.
     :return: The created masks.
     """
-    bounds_y_scale_factor = mask_shape[0] / x.shape[1]
-    bounds_x_scale_factor = mask_shape[1] / x.shape[2]
+    sample_count = data_size[0]
+    frame_shape = data_size[1:3]
 
-    y = np.empty([x.shape[0]] + list(mask_shape))
-    for image_index in range(x.shape[0]):
+    vertical_scale_factor = mask_shape[0] / frame_shape[0]
+    horizontal_scale_factor = mask_shape[1] / frame_shape[1]
+
+    y = np.zeros([sample_count] + list(mask_shape), dtype=np.uint8)
+    for image_index in range(sample_count):
         frame_labels = labels[image_index]
-        mask = np.zeros(mask_shape)
         for object_label in frame_labels:
             object_type = object_label[0]
             if not allowed_object_types or object_type in allowed_object_types:
-                box_x1 = round(object_label[1] * bounds_x_scale_factor)
-                box_y1 = round(object_label[2] * bounds_y_scale_factor)
-                box_x2 = round(object_label[3] * bounds_x_scale_factor)
-                box_y2 = round(object_label[4] * bounds_y_scale_factor)
-                mask[box_y1:box_y2 + 1, box_x1:box_x2 + 1] = 1
-                y[image_index] = np.reshape(mask, [1] + list(mask_shape))
+                top = _convert_from_frame_to_mask_coordinates(object_label[2], vertical_scale_factor, frame_shape[0])
+                bottom = _convert_from_frame_to_mask_coordinates(object_label[3], vertical_scale_factor, frame_shape[0])
+                left = _convert_from_frame_to_mask_coordinates(object_label[4], horizontal_scale_factor, frame_shape[1])
+                right = _convert_from_frame_to_mask_coordinates(object_label[5], horizontal_scale_factor,
+                                                                frame_shape[1])
+                y[image_index, top:bottom + 1, left:right + 1] = 1
     return y
 
 
