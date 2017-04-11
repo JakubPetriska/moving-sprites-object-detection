@@ -3,7 +3,7 @@ from keras.layers import Convolution2D, MaxPooling2D
 from keras.models import Sequential
 from keras.optimizers import Adagrad
 
-from lib.model_wrapper import ExtendedModelWrapper
+from utils_lib.model_wrapper import ExtendedModelWrapper
 
 PARAM_INPUT_HEIGHT = 'input_height'
 PARAM_INPUT_WIDTH = 'input_width'
