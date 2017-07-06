@@ -3,8 +3,11 @@ from abc import ABC, abstractmethod
 from keras.models import model_from_json
 
 
-class ModelWrapper(ABC):
-    def __init__(self, model_file_path=None, weights_file_path=None, verbosity=1):
+class BaseModel(ABC):
+    def __init__(self,
+                 model_file_path=None,
+                 weights_file_path=None,
+                 verbosity=1):
         if model_file_path:
             with open(model_file_path, 'r') as model_file:
                 self.model = model_from_json(model_file.read())
@@ -28,8 +31,6 @@ class ModelWrapper(ABC):
     def compile_model(self):
         pass
 
-
-class ExtendedModelWrapper(ModelWrapper):
     @abstractmethod
     def train(self, x, y, validation_data=None, callbacks=None):
         pass
