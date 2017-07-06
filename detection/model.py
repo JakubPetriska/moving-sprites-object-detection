@@ -2,12 +2,12 @@ import tensorflow as tf
 from keras.layers import Convolution2D, MaxPooling2D
 from keras.models import Sequential
 from keras.optimizers import Adagrad
+
 from detection import constants
+from detection.base_model import BaseModel
 
-from utils.base_model import BaseModel
-
-BATCH_SIZE = 5  # TODO return to 50
-TRAINING_EPOCHS = 2  # TODO return to 12
+BATCH_SIZE = 50
+TRAINING_EPOCHS = 12
 
 MASK_OBJECTS_IMPORTANCE_MULTIPLIER = 2
 

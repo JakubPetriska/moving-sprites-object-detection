@@ -14,3 +14,15 @@ FRAME_IMAGE_FILE_NAME_FORMAT = 'image%05d.png'
 RESOLUTION_WIDTH = 200
 RESOLUTION_HEIGHT = 200
 FRAMES_PER_SECOND = 8
+
+# Training result folder structure
+RESULTS_DIR = 'models'
+RESULT_DIR_FORMAT = 'model_%s'
+RESULT_MODEL_FILE = 'model.json'
+RESULT_MODEL_WEIGHTS_FILE = 'model_weights.h5'
+RESULT_MODEL_BEST_WEIGHTS_FILE = 'model_best_weights.h5'  # weights of model with best validation performance
+RESULT_PREDICTED_MASKS_DIR = 'masks_predicted'
+RESULT_VIDEO_FILE = 'video.mp4'
+RESULT_IMAGES_DIR = 'images_annotated'
+RESULT_MODEL_PLOT = 'model.png'
+RESULT_MASKS_DIR = 'masks_ground_truth'
