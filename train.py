@@ -18,15 +18,24 @@ GENERATE_ANNOTATED_VIDEO = True
 PROGRESS_VERBOSITY = 1
 PLOT_MODEL = True
 
+ALLOWED_OBJECT_TYPES = [
+    'car-01.png', 'car-02.png', 'car-03.png', 'car-04.png',
+    'car-05.png', 'car-06.png', 'car-07.png', 'car-08.png',
+    'car-09.png', 'car-10.png', 'car-11.png', 'car-12.png'
+]
+
 # Create model instance
 model = Model(verbosity=PROGRESS_VERBOSITY)
 
 model_output_shape = model.model.layers[-1].output_shape[1:]
 
 # Read the training/validation/test data
-x_train, y_train = read_dataset(constants.DATASET_TRAINING_PATH, model_output_shape)
-x_validation, y_validation = read_dataset(constants.DATASET_TRAINING_PATH, model_output_shape)
-x_test, y_test = read_dataset(constants.DATASET_TEST_PATH, model_output_shape)
+x_train, y_train = read_dataset(constants.DATASET_TRAINING_PATH,
+                                model_output_shape, ALLOWED_OBJECT_TYPES)
+x_validation, y_validation = read_dataset(constants.DATASET_TRAINING_PATH,
+                                          model_output_shape, ALLOWED_OBJECT_TYPES)
+x_test, y_test = read_dataset(constants.DATASET_TEST_PATH,
+                              model_output_shape, ALLOWED_OBJECT_TYPES)
 
 # Create output dir if it does not exist
 output_dir_name = constants.RESULT_DIR_FORMAT % datetime.datetime.now().strftime("%Y.%m.%d-%H:%M:%S")
