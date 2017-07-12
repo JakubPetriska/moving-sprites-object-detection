@@ -9,17 +9,21 @@ TEST_SEQUENCE_OVERLAY_ALPHA = 0.25
 TEST_SEQUENCE_OVERLAY_COLOR = [0, 255, 0]
 
 
+def save_mask(path, mask):
+    mask_image = np.copy(mask)
+    mask_image *= 255
+    mask_image = np.clip(mask_image, 0, 255)
+    mask_image = np.round(mask_image).astype(np.uint8)
+    mask_image = np.repeat(mask_image, 3, axis=2)
+    misc.imsave(path, mask_image)
+
+
 def save_masks(path, masks):
     if not os.path.exists(path):
         os.makedirs(path)
     mask_image_path = os.path.join(path, constants.FRAME_IMAGE_FILE_NAME_FORMAT)
     for i in range(len(masks)):
-        mask_image = np.copy(masks[i])
-        mask_image *= 255
-        mask_image = np.clip(mask_image, 0, 255)
-        mask_image = np.round(mask_image).astype(np.uint8)
-        mask_image = np.repeat(mask_image, 3, axis=2)
-        misc.imsave(mask_image_path % i, mask_image)
+        save_mask(mask_image_path % i, masks[i])
 
 
 def create_video(images_dir, output_file_path, show_encoding_info=False):
