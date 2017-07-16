@@ -41,7 +41,7 @@ def create_video(images_dir, output_file_path, show_encoding_info=False):
                  output_file_path))
 
 
-def generate_video_sequence(output_path, images_dir, images, masks):
+def generate_video_sequence(output_file_path, images_dir, images, masks):
     if not os.path.exists(images_dir):
         os.makedirs(images_dir)
     frame_image_path = os.path.join(images_dir, constants.FRAME_IMAGE_FILE_NAME_FORMAT)
@@ -62,7 +62,7 @@ def generate_video_sequence(output_path, images_dir, images, masks):
         image *= 1 - (mask * (1 - TEST_SEQUENCE_OVERLAY_ALPHA))
         image += overlay_mask
         misc.imsave(frame_image_path % i, image.astype(np.uint8))
-    create_video(images_dir, output_path)
+    create_video(images_dir, output_file_path)
 
 
 def annotate_image(image, cluster_bounds):

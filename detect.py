@@ -18,10 +18,10 @@ SAVE_MASKS = True
 SAVE_CLUSTERED_MASKS = True
 
 
-def find_closest_centroid(centroids, data):
+def find_cluster_assignment(centroids, data):
     data_points_count = len(data)
     centroids_count = len(centroids)
-    centroid_indexes = np.zeros(data_points_count, np.int)
+    cluster_assignment = np.zeros(data_points_count, np.int)
     for data_point_index in range(data_points_count):
         data_point = data[data_point_index]
         min_centroid_distance = -1
@@ -31,22 +31,25 @@ def find_closest_centroid(centroids, data):
             if closest_centroid_index == -1 or centroid_distance < min_centroid_distance:
                 min_centroid_distance = centroid_distance
                 closest_centroid_index = centroid_index
-        centroid_indexes[data_point_index] = closest_centroid_index
-    return centroid_indexes
+        cluster_assignment[data_point_index] = closest_centroid_index
+    return cluster_assignment
 
 
-def calculate_average_squared_centroid_distance(centroids, data, centroid_indexes):
+def calculate_average_squared_centroid_distance(centroids, data, cluster_assignment):
     squared_centroid_distance_sum = 0
     data_points_count = len(data)
     for data_point_index in range(data_points_count):
         data_point = data[data_point_index]
-        data_point_centroid = centroids[centroid_indexes[data_point_index]]
+        data_point_centroid = centroids[cluster_assignment[data_point_index]]
         squared_centroid_distance_sum += np.sum(np.square(np.subtract(data_point_centroid, data_point)))
     return squared_centroid_distance_sum / data_points_count
 
 
 def find_clusters(data):
-    cluster_classification = None
+    """Do kmeans, starting from k=1 and raise it by 1 after each iteration until average squared
+    distance of data points to their centroids stops falling so much.
+    """
+    cluster_assignment = None
     clusters_count = 0
     average_centroid_distance = -1
     centroid_distance_improvement_percentage = -1
@@ -54,16 +57,16 @@ def find_clusters(data):
             or centroid_distance_improvement_percentage > CENTROID_DISTANCE_IMPROVEMENT_PERCENTAGE_THRESHOLD:
         clusters_count += 1
         centroids, distortion = kmeans(data.astype(np.float), clusters_count)
-        cluster_classification = find_closest_centroid(centroids, data)
+        cluster_assignment = find_cluster_assignment(centroids, data)
         prev_average_centroid_distance = average_centroid_distance
         average_centroid_distance = \
-            calculate_average_squared_centroid_distance(centroids, data, cluster_classification)
+            calculate_average_squared_centroid_distance(centroids, data, cluster_assignment)
         if prev_average_centroid_distance == -1:
             centroid_distance_improvement_percentage = 1
         else:
             centroid_distance_improvement_percentage = \
                 (prev_average_centroid_distance - average_centroid_distance) / prev_average_centroid_distance
-    return clusters_count, cluster_classification
+    return clusters_count, cluster_assignment
 
 
 def find_cluster_bounds(data, cluster_count, cluster_assignment):
@@ -91,12 +94,10 @@ if __name__ == "__main__":
         print("Usage: python detect.py <model-dir> <output-dir> <input-files>")
         sys.exit(1)
 
-    # Create the output directory
     output_dir = sys.argv[2]
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    # Read input files
     input_files = sys.argv[3:]
     x = np.empty((len(input_files),
                   constants.RESOLUTION_HEIGHT,
@@ -104,7 +105,6 @@ if __name__ == "__main__":
     for i, input_file_path in enumerate(input_files):
         x[i] = misc.imread(input_file_path)
 
-    # Load the model
     model_dir = sys.argv[1]
     model_file_path = os.path.join(model_dir, 'model.json')
     model_wights_file_path = \
@@ -112,30 +112,21 @@ if __name__ == "__main__":
     model = Model(model_file_path, model_wights_file_path)
     model_output_shape = model.model.layers[-1].output_shape[1:]
 
-    # Use ANN model on input images
     ys = model.predict(x)
     for i, input_file_path in enumerate(input_files):
         input_file_name = ''.join(os.path.split(input_file_path)[1].split('.')[0:-1])
         output_file_path = os.path.join(output_dir, input_file_name)
 
         y = ys[i]
-
-        # Set all values below threshold to 0
         y[y < FILTER_THRESHOLD] = 0
 
-        # Find coordinates of non zero pixels
         non_zero_coords = np.nonzero(y)
         non_zero_coords = np.array([non_zero_coords[0], non_zero_coords[1]]).T
 
         cluster_count = 0
         if len(non_zero_coords) > 0:
-            # Cluster them
             cluster_count, cluster_assignment = find_clusters(non_zero_coords)
-
-            # Find bounds of clusters
             cluster_bounds = find_cluster_bounds(non_zero_coords, cluster_count, cluster_assignment)
-
-            # Scale cluster bounds from ANN output shape to input shape
             scale = np.divide(np.array([constants.RESOLUTION_HEIGHT, constants.RESOLUTION_WIDTH]),
                               np.array(model_output_shape[0:-1]))
             for cluster_bound in cluster_bounds:
@@ -144,7 +135,6 @@ if __name__ == "__main__":
                 cluster_bound[2] = int(round(cluster_bound[2] * scale[1]))
                 cluster_bound[3] = int(round(cluster_bound[3] * scale[1]))
 
-            # Annotates the input images with cluster bounds
             annotate_image(x[i], cluster_bounds)
 
         misc.imsave(output_file_path + '.png', x[i])

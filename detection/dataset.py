@@ -9,9 +9,9 @@ from detection import constants
 LABELS_FILE_DELIMITER = ';'
 
 
-def read_labels(input_path):
+def read_labels(labels_file_path):
     labels = []
-    with open(input_path, newline='') as labels_file:
+    with open(labels_file_path, newline='') as labels_file:
         labels_reader = csv.reader(labels_file, delimiter=LABELS_FILE_DELIMITER)
         for row in labels_reader:
             row[0] = int(row[0])
@@ -22,9 +22,11 @@ def read_labels(input_path):
     return labels
 
 
-def read_dataset(path, mask_shape, allowed_types=None):
-    labels = read_labels(os.path.join(path, constants.DATASET_LABELS_FILE))
-    image_path_format = os.path.join(path, constants.DATASET_IMAGES_DIR, constants.FRAME_IMAGE_FILE_NAME_FORMAT)
+def read_dataset(dataset_dir_path, mask_shape, allowed_types=None):
+    labels = read_labels(os.path.join(dataset_dir_path, constants.DATASET_LABELS_FILE))
+    image_path_format = os.path.join(dataset_dir_path,
+                                     constants.DATASET_IMAGES_DIR,
+                                     constants.FRAME_IMAGE_FILE_NAME_FORMAT)
     x = np.empty((len(labels), constants.RESOLUTION_HEIGHT, constants.RESOLUTION_WIDTH, 3))
     y_shape = [len(labels)]
     y_shape += mask_shape
