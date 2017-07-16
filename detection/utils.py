@@ -18,6 +18,14 @@ def save_mask(path, mask):
     misc.imsave(path, mask_image)
 
 
+def save_mask_colored(path, mask):
+    mask_image = np.copy(mask)
+    mask_image *= 255
+    mask_image = np.clip(mask_image, 0, 255)
+    mask_image = np.round(mask_image).astype(np.uint8)
+    misc.imsave(path, mask_image)
+
+
 def save_masks(path, masks):
     if not os.path.exists(path):
         os.makedirs(path)
@@ -55,3 +63,21 @@ def generate_video_sequence(output_path, images_dir, images, masks):
         image += overlay_mask
         misc.imsave(frame_image_path % i, image.astype(np.uint8))
     create_video(images_dir, output_path)
+
+
+def annotate_image(image, cluster_bounds):
+    for i in range(len(cluster_bounds)):
+        object_bounding_box = cluster_bounds[i]
+        top = object_bounding_box[0]
+        bottom = object_bounding_box[1]
+        left = object_bounding_box[2]
+        right = object_bounding_box[3]
+
+        image[top:bottom, left, 0] = 255
+        image[top:bottom, left, 1:] = 0
+        image[top:bottom, right, 0] = 255
+        image[top:bottom, right, 1:] = 0
+        image[top, left:right, 0] = 255
+        image[top, left:right, 1:] = 0
+        image[bottom, left:right, 0] = 255
+        image[bottom, left:right, 1:] = 0
