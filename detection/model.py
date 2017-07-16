@@ -7,7 +7,7 @@ from detection import constants
 from detection.base_model import BaseModel
 
 BATCH_SIZE = 50
-TRAINING_EPOCHS = 12
+TRAINING_EPOCHS = 40
 
 MASK_OBJECTS_IMPORTANCE_MULTIPLIER = 2
 

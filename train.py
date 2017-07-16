@@ -9,7 +9,6 @@ from detection.model import Model
 from detection.utils import generate_video_sequence
 from detection.utils import save_masks
 
-
 LIGHT_OUTPUT = False  # Turns off all following
 SAVE_GROUND_TRUTH_TEST_MASKS = True
 SAVE_PREDICTED_TEST_MASKS = True
@@ -44,6 +43,12 @@ output_dir = os.path.join(constants.RESULTS_DIR, '%s') % output_dir_name
 if not os.path.exists(output_dir):
     os.makedirs(output_dir)
 
+# Plot the model
+if PLOT_MODEL:
+    from keras.utils.visualize_util import plot
+
+    plot(model.model, to_file=os.path.join(output_dir, constants.RESULT_MODEL_PLOT), show_shapes=True)
+
 # Train the network
 print('\nTraining')
 tensorboard_callback = TensorBoard(log_dir=output_dir)
@@ -71,9 +76,3 @@ if not LIGHT_OUTPUT:
             generate_video_sequence(os.path.join(output_dir, constants.RESULT_VIDEO_FILE),
                                     os.path.join(output_dir, constants.RESULT_IMAGES_DIR),
                                     x_test, y_predicted)
-
-# Plot the model
-if PLOT_MODEL:
-    from keras.utils.visualize_util import plot
-
-    plot(model.model, to_file=os.path.join(output_dir, constants.RESULT_MODEL_PLOT), show_shapes=True)
