@@ -14,8 +14,8 @@ from detection.utils import save_mask_colored
 FILTER_THRESHOLD = 0.65
 CENTROID_DISTANCE_IMPROVEMENT_PERCENTAGE_THRESHOLD = 0.58
 
-SAVE_MASKS = True
-SAVE_CLUSTERED_MASKS = True
+SAVE_MASKS = False
+SAVE_CLUSTERED_MASKS = False
 
 
 def find_cluster_assignment(centroids, data):

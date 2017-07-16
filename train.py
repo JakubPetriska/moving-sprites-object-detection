@@ -9,13 +9,13 @@ from detection.model import Model
 from detection.utils import generate_video_sequence
 from detection.utils import save_masks
 
-LIGHT_OUTPUT = False  # Turns off all following
+LIGHT_OUTPUT = True  # Turns off all following
 SAVE_GROUND_TRUTH_TEST_MASKS = True
 SAVE_PREDICTED_TEST_MASKS = True
 GENERATE_ANNOTATED_VIDEO = True
 
 PROGRESS_VERBOSITY = 1
-PLOT_MODEL = True
+PLOT_MODEL = False
 
 if __name__ == "__main__":
     # Create output dir if it does not exist
