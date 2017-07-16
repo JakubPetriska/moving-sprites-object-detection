@@ -11,8 +11,8 @@ from detection.utils import annotate_image
 from detection.utils import save_mask
 from detection.utils import save_mask_colored
 
-FILTER_THRESHOLD = 0.44
-CENTROID_DISTANCE_IMPROVEMENT_PERCENTAGE_THRESHOLD = 0.72
+FILTER_THRESHOLD = 0.65
+CENTROID_DISTANCE_IMPROVEMENT_PERCENTAGE_THRESHOLD = 0.58
 
 SAVE_MASKS = True
 SAVE_CLUSTERED_MASKS = True
@@ -127,23 +127,25 @@ if __name__ == "__main__":
         non_zero_coords = np.nonzero(y)
         non_zero_coords = np.array([non_zero_coords[0], non_zero_coords[1]]).T
 
-        # Cluster them
-        cluster_count, cluster_assignment = find_clusters(non_zero_coords)
+        cluster_count = 0
+        if len(non_zero_coords) > 0:
+            # Cluster them
+            cluster_count, cluster_assignment = find_clusters(non_zero_coords)
 
-        # Find bounds of clusters
-        cluster_bounds = find_cluster_bounds(non_zero_coords, cluster_count, cluster_assignment)
+            # Find bounds of clusters
+            cluster_bounds = find_cluster_bounds(non_zero_coords, cluster_count, cluster_assignment)
 
-        # Scale cluster bounds from ANN output shape to input shape
-        scale = np.divide(np.array([constants.RESOLUTION_HEIGHT, constants.RESOLUTION_WIDTH]),
-                          np.array(model_output_shape[0:-1]))
-        for cluster_bound in cluster_bounds:
-            cluster_bound[0] = int(round(cluster_bound[0] * scale[0]))
-            cluster_bound[1] = int(round(cluster_bound[1] * scale[0]))
-            cluster_bound[2] = int(round(cluster_bound[2] * scale[1]))
-            cluster_bound[3] = int(round(cluster_bound[3] * scale[1]))
+            # Scale cluster bounds from ANN output shape to input shape
+            scale = np.divide(np.array([constants.RESOLUTION_HEIGHT, constants.RESOLUTION_WIDTH]),
+                              np.array(model_output_shape[0:-1]))
+            for cluster_bound in cluster_bounds:
+                cluster_bound[0] = int(round(cluster_bound[0] * scale[0]))
+                cluster_bound[1] = int(round(cluster_bound[1] * scale[0]))
+                cluster_bound[2] = int(round(cluster_bound[2] * scale[1]))
+                cluster_bound[3] = int(round(cluster_bound[3] * scale[1]))
 
-        # Annotates the input images with cluster bounds
-        annotate_image(x[i], cluster_bounds)
+            # Annotates the input images with cluster bounds
+            annotate_image(x[i], cluster_bounds)
 
         misc.imsave(output_file_path + '.png', x[i])
 
